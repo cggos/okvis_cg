@@ -31,3 +31,6 @@
 documentation/html/
 
 build/
+cmake-build-debug/
+
+.idea/
