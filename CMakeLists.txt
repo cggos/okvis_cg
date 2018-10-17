@@ -5,32 +5,26 @@ project(okvis)
 set(OKVIS_MAJOR_VERSION 1)
 set(OKVIS_MINOR_VERSION 1)
 set(OKVIS_PATCH_VERSION 3)
-set(OKVIS_VERSION
-  ${OKVIS_MAJOR_VERSION}.${OKVIS_MINOR_VERSION}.${OKVIS_PATCH_VERSION})
+set(OKVIS_VERSION ${OKVIS_MAJOR_VERSION}.${OKVIS_MINOR_VERSION}.${OKVIS_PATCH_VERSION})
 
 # options for build configuration
-option (USE_SYSTEM_BRISK
-        "Use brisk via find_package rather than downloading it as part of okvis" OFF) 
-option (USE_SYSTEM_CERES
-        "Use ceres via find_package rather than downloading it as part of okvis" OFF) 
-option (BUILD_APPS
-        "Builds a demo app (which requires boost)" ON) 
-option (BUILD_TESTS
-        "Builds all gtests" OFF) 
+option (USE_SYSTEM_BRISK "Use brisk via find_package rather than downloading it as part of okvis" OFF)
+option (USE_SYSTEM_CERES "Use ceres via find_package rather than downloading it as part of okvis" OFF)
+option (BUILD_APPS "Builds a demo app (which requires boost)" ON)
+option (BUILD_TESTS "Builds all gtests" OFF)
+
 SET(N_CORES 3 CACHE STRING "Using N number of cores for parallel build")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
-set(INSTALL_INCLUDE_DIR include CACHE PATH
-  "Installation directory for header files")
+set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
   set(DEF_INSTALL_CMAKE_DIR lib/CMake/okvis)
 endif()
-set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
-  "Installation directory for CMake files")
+set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH "Installation directory for CMake files")
  
 # Make relative paths absolute (needed later on)
 foreach(p LIB BIN INCLUDE CMAKE)
@@ -45,8 +39,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
   # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-    "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   message(WARNING "CMAKE_BUILD_TYPE not set to 'Release'. Performance may be terrible.")
@@ -92,13 +85,10 @@ if(VISENSORDRIVER_FOUND)
   message(STATUS "Found libvisensor. Setting HAVE_LIBVISENSOR flag.")
   include_directories(${VISensorDriver_INCLUDE_DIR})
   # install find script
-  install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindVISensor.cmake
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake)
+  install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindVISensor.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake)
 else()
   message(STATUS "libvisensor not found")
 endif()
-
-
 
 # glog
 find_package(Glog REQUIRED)
@@ -128,12 +118,9 @@ else()
   add_dependencies(agast brisk_external)
 
   # install it once built
-  install(FILES ${CMAKE_BINARY_DIR}/lib/libbrisk.a ${CMAKE_BINARY_DIR}/lib/libagast.a 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/include/brisk/ 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/brisk/)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/CMake/brisk/
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake/brisk/)
+  install(FILES ${CMAKE_BINARY_DIR}/lib/libbrisk.a ${CMAKE_BINARY_DIR}/lib/libagast.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/include/brisk/   DESTINATION ${CMAKE_INSTALL_PREFIX}/include/brisk/)
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/CMake/brisk/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake/brisk/)
 endif()
 
 # ceres
@@ -180,11 +167,9 @@ else()
   set(OKVIS_CERES_CONFIG "${CMAKE_BINARY_DIR}/share/Ceres/")
 
   if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set_property(TARGET ceres PROPERTY IMPORTED_LOCATION
-               ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres-debug.a )
+    set_property(TARGET ceres PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres-debug.a )
   else () 
-    set_property(TARGET ceres PROPERTY IMPORTED_LOCATION
-               ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres.a )
+    set_property(TARGET ceres PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres.a )
   endif ()
    
   find_package(OpenMP QUIET)
@@ -199,12 +184,9 @@ else()
   add_dependencies(${CERES_LIBRARIES} ceres_external)
 
   # install it once built
-  install(FILES ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres.a 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ceres/ 
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ceres/)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/share/Ceres/
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/Ceres/)
+  install(FILES ${CMAKE_BINARY_DIR}/${CERES_LIB_PREFIX}/libceres.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ceres/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ceres/)
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/share/Ceres/ DESTINATION ${CMAKE_INSTALL_PREFIX}/share/Ceres/)
 endif()
 
 # OpenGV
@@ -236,12 +218,9 @@ set_target_properties(opengv PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/li
 add_dependencies(${OpenGV_LIBRARIES} opengv_external)
 
 # install it once built
-install(FILES ${CMAKE_BINARY_DIR}/lib/libopengv.a 
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/opengv/ 
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/opengv/)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/CMake/opengv/
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake/opengv/)
+install(FILES ${CMAKE_BINARY_DIR}/lib/libopengv.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/opengv/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/opengv/)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/CMake/opengv/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/CMake/opengv/)
 
 if(${BUILD_TESTS})
   # gmock
@@ -263,14 +242,12 @@ if(${BUILD_TESTS})
   set(GMOCK_LIBRARY_PATH ${binary_dir}/${CMAKE_FIND_LIBRARY_PREFIXES}gmock.a)
   set(GMOCK_LIBRARY gmock)
   add_library(${GMOCK_LIBRARY} UNKNOWN IMPORTED)
-  set_property(TARGET ${GMOCK_LIBRARY} PROPERTY IMPORTED_LOCATION
-                  ${GMOCK_LIBRARY_PATH} )
+  set_property(TARGET ${GMOCK_LIBRARY} PROPERTY IMPORTED_LOCATION ${GMOCK_LIBRARY_PATH} )
   add_dependencies(${GMOCK_LIBRARY} googlemock)
   set(GTEST_LIBRARY_PATH ${binary_dir}/gtest/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
   set(GTEST_LIBRARY gtestlocal)
   add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
-  set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
-                  ${GTEST_LIBRARY_PATH})
+  set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION ${GTEST_LIBRARY_PATH})
   add_dependencies(${GTEST_LIBRARY} googlemock)
 endif()
 
@@ -357,8 +334,7 @@ export (TARGETS
 export ( PACKAGE okvis )
 
 # Create the okvisConfig.cmake and okvisConfigVersion files
-file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
-   "${INSTALL_INCLUDE_DIR}")
+file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}" "${INSTALL_INCLUDE_DIR}")
 # ... for the build tree
 set(CONF_INCLUDE_DIRS 
   "${PROJECT_SOURCE_DIR}/okvis_util/include"
@@ -373,15 +349,12 @@ set(CONF_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/okvis_multisensor_processing/include"
   "${PROJECT_BINARY_DIR}"
 )
-configure_file(cmake/okvisConfig.cmake.in
-  "${PROJECT_BINARY_DIR}/okvisConfig.cmake" @ONLY)
+configure_file(cmake/okvisConfig.cmake.in "${PROJECT_BINARY_DIR}/okvisConfig.cmake" @ONLY)
 # ... for the install tree
 set(CONF_INCLUDE_DIRS "\${OKVIS_CMAKE_DIR}/${REL_INCLUDE_DIR}")
-configure_file(cmake/okvisConfig.cmake.in
-  "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/okvisConfig.cmake" @ONLY)
+configure_file(cmake/okvisConfig.cmake.in "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/okvisConfig.cmake" @ONLY)
 # ... for both
-configure_file(cmake/okvisConfigVersion.cmake.in
-  "${PROJECT_BINARY_DIR}/okvisConfigVersion.cmake" @ONLY)
+configure_file(cmake/okvisConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/okvisConfigVersion.cmake" @ONLY)
  
 # Install the okvisConfig.cmake and okvisConfigVersion.cmake
 install(FILES
@@ -390,5 +363,4 @@ install(FILES
   DESTINATION "${INSTALL_CMAKE_DIR}")
  
 # Install the export set for use with the install-tree
-install(EXPORT okvisTargets DESTINATION
-  "${INSTALL_CMAKE_DIR}")
+install(EXPORT okvisTargets DESTINATION "${INSTALL_CMAKE_DIR}")

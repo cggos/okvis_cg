@@ -203,8 +203,7 @@ int main(int argc, char **argv)
   FLAGS_colorlogtostderr = 1;
 
   if (argc != 3 && argc != 4) {
-    LOG(ERROR)<<
-    "Usage: ./" << argv[0] << " configuration-yaml-file dataset-folder [skip-first-seconds]";
+    LOG(ERROR) << "Usage: ./" << argv[0] << " configuration-yaml-file dataset-folder [skip-first-seconds]";
     return -1;
   }
 
@@ -283,8 +282,7 @@ int main(int argc, char **argv)
     std::sort(image_names.at(i).begin(), image_names.at(i).end());
   }
 
-  std::vector < std::vector < std::string > ::iterator
-      > cam_iterators(numCameras);
+  std::vector < std::vector < std::string > ::iterator > cam_iterators(numCameras);
   for (size_t i = 0; i < numCameras; ++i) {
     cam_iterators.at(i) = image_names.at(i).begin();
   }
@@ -308,13 +306,9 @@ int main(int argc, char **argv)
     okvis::Time t;
 
     for (size_t i = 0; i < numCameras; ++i) {
-      cv::Mat filtered = cv::imread(
-          path + "/cam" + std::to_string(i) + "/data/" + *cam_iterators.at(i),
-          cv::IMREAD_GRAYSCALE);
-      std::string nanoseconds = cam_iterators.at(i)->substr(
-          cam_iterators.at(i)->size() - 13, 9);
-      std::string seconds = cam_iterators.at(i)->substr(
-          0, cam_iterators.at(i)->size() - 13);
+      cv::Mat filtered = cv::imread(path + "/cam" + std::to_string(i) + "/data/" + *cam_iterators.at(i), cv::IMREAD_GRAYSCALE);
+      std::string nanoseconds = cam_iterators.at(i)->substr(cam_iterators.at(i)->size() - 13, 9);
+      std::string seconds = cam_iterators.at(i)->substr(0, cam_iterators.at(i)->size() - 13);
       t = okvis::Time(std::stoi(seconds), std::stoi(nanoseconds));
       if (start == okvis::Time(0.0)) {
         start = t;
@@ -367,9 +361,7 @@ int main(int argc, char **argv)
 
     // display progress
     if (counter % 20 == 0) {
-      std::cout << "\rProgress: "
-          << int(double(counter) / double(num_camera_images) * 100) << "%  "
-          << std::flush;
+      std::cout << "\rProgress: " << int(double(counter) / double(num_camera_images) * 100) << "%  " << std::flush;
     }
 
   }

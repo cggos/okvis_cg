@@ -76,14 +76,12 @@ Frontend::Frontend(size_t numCameras)
       briskDescriptionRotationInvariance_(true),
       briskDescriptionScaleInvariance_(false),
       briskMatchingThreshold_(60.0),
-      matcher_(
-          std::unique_ptr<okvis::DenseMatcher>(new okvis::DenseMatcher(4))),
+      matcher_(std::unique_ptr<okvis::DenseMatcher>(new okvis::DenseMatcher(4))),
       keyframeInsertionOverlapThreshold_(0.6),
       keyframeInsertionMatchingRatioThreshold_(0.2) {
   // create mutexes for feature detectors and descriptor extractors
   for (size_t i = 0; i < numCameras_; ++i) {
-    featureDetectorMutexes_.push_back(
-        std::unique_ptr<std::mutex>(new std::mutex()));
+    featureDetectorMutexes_.push_back(std::unique_ptr<std::mutex>(new std::mutex()));
   }
   initialiseBriskFeatureDetectors();
 }
@@ -811,8 +809,7 @@ int Frontend::runRansac2d2d(okvis::Estimator& estimator,
 
 // (re)instantiates feature detectors and descriptor extractors. Used after settings changed or at startup.
 void Frontend::initialiseBriskFeatureDetectors() {
-  for (auto it = featureDetectorMutexes_.begin();
-      it != featureDetectorMutexes_.end(); ++it) {
+  for (auto it = featureDetectorMutexes_.begin(); it != featureDetectorMutexes_.end(); ++it) {
     (*it)->lock();
   }
   featureDetectors_.clear();
@@ -830,14 +827,12 @@ void Frontend::initialiseBriskFeatureDetectors() {
                 briskDetectionAbsoluteThreshold_,
                 briskDetectionMaximumKeypoints_)));
 #endif
+
     descriptorExtractors_.push_back(
         std::shared_ptr<cv::DescriptorExtractor>(
-            new brisk::BriskDescriptorExtractor(
-                briskDescriptionRotationInvariance_,
-                briskDescriptionScaleInvariance_)));
+            new brisk::BriskDescriptorExtractor(briskDescriptionRotationInvariance_, briskDescriptionScaleInvariance_)));
   }
-  for (auto it = featureDetectorMutexes_.begin();
-      it != featureDetectorMutexes_.end(); ++it) {
+  for (auto it = featureDetectorMutexes_.begin(); it != featureDetectorMutexes_.end(); ++it) {
     (*it)->unlock();
   }
 }

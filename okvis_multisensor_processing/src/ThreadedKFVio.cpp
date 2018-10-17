@@ -81,9 +81,8 @@ ThreadedKFVio::ThreadedKFVio(okvis::VioParameters& parameters)
       frontend_(parameters.nCameraSystem.numCameras()),
       parameters_(parameters),
       maxImuInputQueueSize_(
-          2 * max_camera_input_queue_size * parameters.imu.rate
-              / parameters.sensors_information.cameraRate) {
-  setBlocking(false);
+              2 * max_camera_input_queue_size * parameters.imu.rate / parameters.sensors_information.cameraRate) {
+  setBlocking(false); //数据流采用 阻塞式 的线程安全队列
   init();
 }
 #endif
@@ -99,9 +98,10 @@ void ThreadedKFVio::init() {
   frontend_.setBriskDetectionMaximumKeypoints(parameters_.optimization.maxNoKeypoints);
 
   lastOptimizedStateTimestamp_ = okvis::Time(0.0) + temporal_imu_data_overlap;  // s.t. last_timestamp_ - overlap >= 0 (since okvis::time(-0.02) returns big number)
-  lastAddedStateTimestamp_ = okvis::Time(0.0) + temporal_imu_data_overlap;  // s.t. last_timestamp_ - overlap >= 0 (since okvis::time(-0.02) returns big number)
+  lastAddedStateTimestamp_     = okvis::Time(0.0) + temporal_imu_data_overlap;  // s.t. last_timestamp_ - overlap >= 0 (since okvis::time(-0.02) returns big number)
 
   estimator_.addImu(parameters_.imu);
+
   for (size_t i = 0; i < numCameras_; ++i) {
     // parameters_.camera_extrinsics is never set (default 0's)...
     // do they ever change?
@@ -133,19 +133,16 @@ void ThreadedKFVio::startThreads() {
   for (size_t i = 0; i < numCameraPairs_; ++i) {
     keypointConsumerThreads_.emplace_back(&ThreadedKFVio::matchingLoop, this);
   }
-  imuConsumerThread_ = std::thread(&ThreadedKFVio::imuConsumerLoop, this);
-  positionConsumerThread_ = std::thread(&ThreadedKFVio::positionConsumerLoop,
-                                        this);
-  gpsConsumerThread_ = std::thread(&ThreadedKFVio::gpsConsumerLoop, this);
-  magnetometerConsumerThread_ = std::thread(
-      &ThreadedKFVio::magnetometerConsumerLoop, this);
-  differentialConsumerThread_ = std::thread(
-      &ThreadedKFVio::differentialConsumerLoop, this);
+  imuConsumerThread_          = std::thread(&ThreadedKFVio::imuConsumerLoop, this);
+  positionConsumerThread_     = std::thread(&ThreadedKFVio::positionConsumerLoop, this);
+  gpsConsumerThread_          = std::thread(&ThreadedKFVio::gpsConsumerLoop, this);
+  magnetometerConsumerThread_ = std::thread(&ThreadedKFVio::magnetometerConsumerLoop, this);
+  differentialConsumerThread_ = std::thread(&ThreadedKFVio::differentialConsumerLoop, this);
 
   // algorithm threads
-  visualizationThread_ = std::thread(&ThreadedKFVio::visualizationLoop, this);
-  optimizationThread_ = std::thread(&ThreadedKFVio::optimizationLoop, this);
-  publisherThread_ = std::thread(&ThreadedKFVio::publisherLoop, this);
+  visualizationThread_        = std::thread(&ThreadedKFVio::visualizationLoop, this);
+  optimizationThread_         = std::thread(&ThreadedKFVio::optimizationLoop, this);
+  publisherThread_            = std::thread(&ThreadedKFVio::publisherLoop, this);
 }
 
 // Destructor. This calls Shutdown() for all threadsafe queues and joins all threads.
@@ -196,16 +193,13 @@ bool ThreadedKFVio::addImage(const okvis::Time & stamp, size_t cameraIndex,
   assert(cameraIndex<numCameras_);
 
   if (lastAddedImageTimestamp_ > stamp
-      && fabs((lastAddedImageTimestamp_ - stamp).toSec())
-          > parameters_.sensors_information.frameTimestampTolerance) {
-    LOG(ERROR)
-        << "Received image from the past. Dropping the image.";
+      && fabs((lastAddedImageTimestamp_ - stamp).toSec()) > parameters_.sensors_information.frameTimestampTolerance) {
+    LOG(ERROR) << "Received image from the past. Dropping the image.";
     return false;
   }
   lastAddedImageTimestamp_ = stamp;
 
-  std::shared_ptr<okvis::CameraMeasurement> frame = std::make_shared<
-      okvis::CameraMeasurement>();
+  std::shared_ptr<okvis::CameraMeasurement> frame = std::make_shared<okvis::CameraMeasurement>();
   frame->measurement.image = image;
   frame->timeStamp = stamp;
   frame->sensorId = cameraIndex;
@@ -234,9 +228,7 @@ bool ThreadedKFVio::addKeypoints(
     const std::vector<uint64_t> & /*landmarkIds*/,
     const cv::Mat & /*descriptors*/,
     bool* /*asKeyframe*/) {
-  OKVIS_THROW(
-      Exception,
-      "ThreadedKFVio::addKeypoints() not implemented anymore since changes to _keypointMeasurements queue.");
+  OKVIS_THROW(Exception, "ThreadedKFVio::addKeypoints() not implemented anymore since changes to _keypointMeasurements queue.");
   return false;
 }
 
@@ -282,28 +274,22 @@ void ThreadedKFVio::addPositionMeasurement(const okvis::Time & stamp,
 }
 
 // Add a GPS measurement.
-void ThreadedKFVio::addGpsMeasurement(const okvis::Time &, double, double,
-                                      double, const Eigen::Vector3d &,
-                                      const Eigen::Matrix3d &) {
+void ThreadedKFVio::addGpsMeasurement(const okvis::Time &, double, double, double, const Eigen::Vector3d &, const Eigen::Matrix3d &) {
   OKVIS_THROW(Exception, "GPS measurements not supported")
 }
 
 // Add a magnetometer measurement.
-void ThreadedKFVio::addMagnetometerMeasurement(const okvis::Time &,
-                                               const Eigen::Vector3d &, double) {
+void ThreadedKFVio::addMagnetometerMeasurement(const okvis::Time &, const Eigen::Vector3d &, double) {
   OKVIS_THROW(Exception, "Magnetometer measurements not supported")
 }
 
 // Add a static pressure measurement.
 void ThreadedKFVio::addBarometerMeasurement(const okvis::Time &, double, double) {
-
   OKVIS_THROW(Exception, "Barometer measurements not supported")
 }
 
 // Add a differential pressure measurement.
-void ThreadedKFVio::addDifferentialPressureMeasurement(const okvis::Time &,
-                                                       double, double) {
-
+void ThreadedKFVio::addDifferentialPressureMeasurement(const okvis::Time &, double, double) {
   OKVIS_THROW(Exception, "Differential pressure measurements not supported")
 }
 
