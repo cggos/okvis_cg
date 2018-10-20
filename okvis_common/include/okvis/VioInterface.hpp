@@ -67,8 +67,7 @@ class VioInterface {
  public:
   OKVIS_DEFINE_EXCEPTION(Exception,std::runtime_error)
 
-  typedef std::function<
-  void(const okvis::Time &, const okvis::kinematics::Transformation &)> StateCallback;
+  typedef std::function<void(const okvis::Time &, const okvis::kinematics::Transformation &)> StateCallback;
   typedef std::function<
       void(const okvis::Time &, const okvis::kinematics::Transformation &,
            const Eigen::Matrix<double, 9, 1> &,
@@ -83,8 +82,7 @@ class VioInterface {
               Eigen::aligned_allocator<okvis::kinematics::Transformation> >&)> FullStateCallbackWithExtrinsics;
   typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> EigenImage;
   typedef std::function<
-      void(const okvis::Time &, const okvis::MapPointVector &,
-           const okvis::MapPointVector &)> LandmarksCallback;
+      void(const okvis::Time &, const okvis::MapPointVector &, const okvis::MapPointVector &)> LandmarksCallback;
 
   VioInterface();
   virtual ~VioInterface();

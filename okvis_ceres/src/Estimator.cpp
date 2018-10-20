@@ -820,8 +820,7 @@ bool Estimator::initPoseFromImu(
 
   // acceleration vector
   Eigen::Vector3d acc_B = Eigen::Vector3d::Zero();
-  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements.begin();
-      it < imuMeasurements.end(); ++it) {
+  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements.begin(); it < imuMeasurements.end(); ++it) {
     acc_B += it->measurement.accelerometers;
   }
   acc_B /= double(imuMeasurements.size());
@@ -841,8 +840,7 @@ bool Estimator::initPoseFromImu(
 
 // Start ceres optimization.
 #ifdef USE_OPENMP
-void Estimator::optimize(size_t numIter, size_t numThreads,
-                                 bool verbose)
+void Estimator::optimize(size_t numIter, size_t numThreads, bool verbose)
 #else
 void Estimator::optimize(size_t numIter, size_t /*numThreads*/,
                                  bool verbose) // avoid warning since numThreads unused

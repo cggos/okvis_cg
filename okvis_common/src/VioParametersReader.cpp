@@ -80,122 +80,95 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
   // reads
   cv::FileStorage file(filename, cv::FileStorage::READ);
 
-  OKVIS_ASSERT_TRUE(Exception, file.isOpened(),
-                    "Could not open config file: " << filename);
+  OKVIS_ASSERT_TRUE(Exception, file.isOpened(), "Could not open config file: " << filename);
   LOG(INFO) << "Opened configuration file: " << filename;
 
   // number of keyframes
   if (file["numKeyframes"].isInt()) {
     file["numKeyframes"] >> vioParameters_.optimization.numKeyframes;
   } else {
-    LOG(WARNING)
-        << "numKeyframes parameter not provided. Setting to default numKeyframes=5.";
+    LOG(WARNING) << "numKeyframes parameter not provided. Setting to default numKeyframes=5.";
     vioParameters_.optimization.numKeyframes = 5;
   }
   // number of IMU frames
   if (file["numImuFrames"].isInt()) {
     file["numImuFrames"] >> vioParameters_.optimization.numImuFrames;
   } else {
-    LOG(WARNING)
-        << "numImuFrames parameter not provided. Setting to default numImuFrames=2.";
+    LOG(WARNING) << "numImuFrames parameter not provided. Setting to default numImuFrames=2.";
     vioParameters_.optimization.numImuFrames = 2;
   }
+
   // minimum ceres iterations
   if (file["ceres_options"]["minIterations"].isInt()) {
-    file["ceres_options"]["minIterations"]
-        >> vioParameters_.optimization.min_iterations;
+    file["ceres_options"]["minIterations"] >> vioParameters_.optimization.min_iterations;
   } else {
-    LOG(WARNING)
-        << "ceres_options: minIterations parameter not provided. Setting to default minIterations=1";
+    LOG(WARNING) << "ceres_options: minIterations parameter not provided. Setting to default minIterations=1";
     vioParameters_.optimization.min_iterations = 1;
   }
   // maximum ceres iterations
   if (file["ceres_options"]["maxIterations"].isInt()) {
-    file["ceres_options"]["maxIterations"]
-        >> vioParameters_.optimization.max_iterations;
+    file["ceres_options"]["maxIterations"] >> vioParameters_.optimization.max_iterations;
   } else {
-    LOG(WARNING)
-        << "ceres_options: maxIterations parameter not provided. Setting to default maxIterations=10.";
+    LOG(WARNING) << "ceres_options: maxIterations parameter not provided. Setting to default maxIterations=10.";
     vioParameters_.optimization.max_iterations = 10;
   }
   // ceres time limit
   if (file["ceres_options"]["timeLimit"].isReal()) {
     file["ceres_options"]["timeLimit"] >> vioParameters_.optimization.timeLimitForMatchingAndOptimization;
   } else {
-    LOG(WARNING)
-        << "ceres_options: timeLimit parameter not provided. Setting no time limit.";
+    LOG(WARNING) << "ceres_options: timeLimit parameter not provided. Setting no time limit.";
     vioParameters_.optimization.timeLimitForMatchingAndOptimization = -1.0;
   }
 
   // do we use the direct driver?
   bool success = parseBoolean(file["useDriver"], useDriver);
-  OKVIS_ASSERT_TRUE(Exception, success,
-                    "'useDriver' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, success, "'useDriver' parameter missing in configuration file.");
 
   // display images?
-  success = parseBoolean(file["displayImages"],
-                         vioParameters_.visualization.displayImages);
-  OKVIS_ASSERT_TRUE(Exception, success,
-                    "'displayImages' parameter missing in configuration file.");
+  success = parseBoolean(file["displayImages"], vioParameters_.visualization.displayImages);
+  OKVIS_ASSERT_TRUE(Exception, success, "'displayImages' parameter missing in configuration file.");
 
   // detection threshold
   success = file["detection_options"]["threshold"].isReal();
-  OKVIS_ASSERT_TRUE(
-      Exception, success,
-      "'detection threshold' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, success, "'detection threshold' parameter missing in configuration file.");
   file["detection_options"]["threshold"] >> vioParameters_.optimization.detectionThreshold;
 
   // detection octaves
   success = file["detection_options"]["octaves"].isInt();
-  OKVIS_ASSERT_TRUE(
-      Exception, success,
-      "'detection octaves' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, success, "'detection octaves' parameter missing in configuration file.");
   file["detection_options"]["octaves"] >> vioParameters_.optimization.detectionOctaves;
-  OKVIS_ASSERT_TRUE(Exception,
-                    vioParameters_.optimization.detectionOctaves >= 0,
-                    "Invalid parameter value.");
+  OKVIS_ASSERT_TRUE(Exception, vioParameters_.optimization.detectionOctaves >= 0, "Invalid parameter value.");
 
   // maximum detections
   success = file["detection_options"]["maxNoKeypoints"].isInt();
-  OKVIS_ASSERT_TRUE(
-      Exception, success,
-      "'detection maxNoKeypoints' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, success, "'detection maxNoKeypoints' parameter missing in configuration file.");
   file["detection_options"]["maxNoKeypoints"] >> vioParameters_.optimization.maxNoKeypoints;
-  OKVIS_ASSERT_TRUE(Exception,
-                    vioParameters_.optimization.maxNoKeypoints >= 0,
-                    "Invalid parameter value.");
+  OKVIS_ASSERT_TRUE(Exception, vioParameters_.optimization.maxNoKeypoints >= 0, "Invalid parameter value.");
 
   // image delay
   success = file["imageDelay"].isReal();
-  OKVIS_ASSERT_TRUE(Exception, success,
-                    "'imageDelay' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, success, "'imageDelay' parameter missing in configuration file.");
   file["imageDelay"] >> vioParameters_.sensors_information.imageDelay;
   LOG(INFO) << "imageDelay=" << vioParameters_.sensors_information.imageDelay;
 
   // camera rate
   success = file["camera_params"]["camera_rate"].isInt();
-  OKVIS_ASSERT_TRUE(
-      Exception, success,
-      "'camera_params: camera_rate' parameter missing in configuration file.");
-  file["camera_params"]["camera_rate"]
-      >> vioParameters_.sensors_information.cameraRate;
+  OKVIS_ASSERT_TRUE(Exception, success, "'camera_params: camera_rate' parameter missing in configuration file.");
+  file["camera_params"]["camera_rate"] >> vioParameters_.sensors_information.cameraRate;
 
   // timestamp tolerance
   if (file["camera_params"]["timestamp_tolerance"].isReal()) {
-    file["camera_params"]["timestamp_tolerance"]
-        >> vioParameters_.sensors_information.frameTimestampTolerance;
+    file["camera_params"]["timestamp_tolerance"] >> vioParameters_.sensors_information.frameTimestampTolerance;
     OKVIS_ASSERT_TRUE(
         Exception,
-        vioParameters_.sensors_information.frameTimestampTolerance
-            < 0.5 / vioParameters_.sensors_information.cameraRate,
+        vioParameters_.sensors_information.frameTimestampTolerance < 0.5 / vioParameters_.sensors_information.cameraRate,
         "Timestamp tolerance for stereo frames is larger than half the time between frames.");
     OKVIS_ASSERT_TRUE(
         Exception,
         vioParameters_.sensors_information.frameTimestampTolerance >= 0.0,
         "Timestamp tolerance is smaller than 0");
   } else {
-    vioParameters_.sensors_information.frameTimestampTolerance = 0.2
-        / vioParameters_.sensors_information.cameraRate;
+    vioParameters_.sensors_information.frameTimestampTolerance = 0.2 / vioParameters_.sensors_information.cameraRate;
     LOG(WARNING)
         << "No timestamp tolerance for stereo frames specified. Setting to "
         << vioParameters_.sensors_information.frameTimestampTolerance;
@@ -203,70 +176,57 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
 
   // camera params
   if (file["camera_params"]["sigma_absolute_translation"].isReal()) {
-    file["camera_params"]["sigma_absolute_translation"]
-        >> vioParameters_.camera_extrinsics.sigma_absolute_translation;
+    file["camera_params"]["sigma_absolute_translation"] >> vioParameters_.camera_extrinsics.sigma_absolute_translation;
   } else {
     vioParameters_.camera_extrinsics.sigma_absolute_translation = 0.0;
-    LOG(WARNING)
-        << "camera_params: sigma_absolute_translation parameter not provided. Setting to default 0.0";
+    LOG(WARNING) << "camera_params: sigma_absolute_translation parameter not provided. Setting to default 0.0";
   }
   if (file["camera_params"]["sigma_absolute_orientation"].isReal()) {
-    file["camera_params"]["sigma_absolute_orientation"]
-        >> vioParameters_.camera_extrinsics.sigma_absolute_orientation;
+    file["camera_params"]["sigma_absolute_orientation"] >> vioParameters_.camera_extrinsics.sigma_absolute_orientation;
   } else {
     vioParameters_.camera_extrinsics.sigma_absolute_orientation = 0.0;
-    LOG(WARNING)
-        << "camera_params: sigma_absolute_orientation parameter not provided. Setting to default 0.0";
+    LOG(WARNING) << "camera_params: sigma_absolute_orientation parameter not provided. Setting to default 0.0";
   }
   if (file["camera_params"]["sigma_c_relative_translation"].isReal()) {
-    file["camera_params"]["sigma_c_relative_translation"]
-        >> vioParameters_.camera_extrinsics.sigma_c_relative_translation;
+    file["camera_params"]["sigma_c_relative_translation"] >> vioParameters_.camera_extrinsics.sigma_c_relative_translation;
   } else {
     vioParameters_.camera_extrinsics.sigma_c_relative_translation = 0.0;
-    LOG(WARNING)
-        << "camera_params: sigma_c_relative_translation parameter not provided. Setting to default 0.0";
+    LOG(WARNING) << "camera_params: sigma_c_relative_translation parameter not provided. Setting to default 0.0";
   }
   if (file["camera_params"]["sigma_c_relative_orientation"].isReal()) {
-    file["camera_params"]["sigma_c_relative_orientation"]
-        >> vioParameters_.camera_extrinsics.sigma_c_relative_orientation;
+    file["camera_params"]["sigma_c_relative_orientation"] >> vioParameters_.camera_extrinsics.sigma_c_relative_orientation;
   } else {
     vioParameters_.camera_extrinsics.sigma_c_relative_orientation = 0.0;
-    LOG(WARNING)
-        << "camera_params: sigma_c_relative_orientation parameter not provided. Setting to default 0.0";
+    LOG(WARNING) << "camera_params: sigma_c_relative_orientation parameter not provided. Setting to default 0.0";
   }
 
   if(file["publishing_options"]["publish_rate"].isInt()) {
-    file["publishing_options"]["publish_rate"] 
-        >> vioParameters_.publishing.publishRate;
+    file["publishing_options"]["publish_rate"] >> vioParameters_.publishing.publishRate;
   }
 
   if (file["publishing_options"]["landmarkQualityThreshold"].isReal()) {
-    file["publishing_options"]["landmarkQualityThreshold"]
-        >> vioParameters_.publishing.landmarkQualityThreshold;
+    file["publishing_options"]["landmarkQualityThreshold"] >> vioParameters_.publishing.landmarkQualityThreshold;
   }
 
   if (file["publishing_options"]["maximumLandmarkQuality"].isReal()) {
-    file["publishing_options"]["maximumLandmarkQuality"]
-        >> vioParameters_.publishing.maxLandmarkQuality;
+    file["publishing_options"]["maximumLandmarkQuality"] >> vioParameters_.publishing.maxLandmarkQuality;
   }
 
   if (file["publishing_options"]["maxPathLength"].isInt()) {
-    vioParameters_.publishing.maxPathLength =
-        (int) (file["publishing_options"]["maxPathLength"]);
+    vioParameters_.publishing.maxPathLength = (int) (file["publishing_options"]["maxPathLength"]);
   }
 
   parseBoolean(file["publishing_options"]["publishImuPropagatedState"],
                    vioParameters_.publishing.publishImuPropagatedState);
 
-  parseBoolean(file["publishing_options"]["publishLandmarks"],
-                   vioParameters_.publishing.publishLandmarks);
+  parseBoolean(file["publishing_options"]["publishLandmarks"], vioParameters_.publishing.publishLandmarks);
 
   cv::FileNode T_Wc_W_ = file["publishing_options"]["T_Wc_W"];
   if(T_Wc_W_.isSeq()) {
     Eigen::Matrix4d T_Wc_W_e;
-    T_Wc_W_e << T_Wc_W_[0], T_Wc_W_[1], T_Wc_W_[2], T_Wc_W_[3], 
-                T_Wc_W_[4], T_Wc_W_[5], T_Wc_W_[6], T_Wc_W_[7],
-                T_Wc_W_[8], T_Wc_W_[9], T_Wc_W_[10], T_Wc_W_[11], 
+    T_Wc_W_e << T_Wc_W_[0],  T_Wc_W_[1],  T_Wc_W_[2],  T_Wc_W_[3],
+                T_Wc_W_[4],  T_Wc_W_[5],  T_Wc_W_[6],  T_Wc_W_[7],
+                T_Wc_W_[8],  T_Wc_W_[9],  T_Wc_W_[10], T_Wc_W_[11],
                 T_Wc_W_[12], T_Wc_W_[13], T_Wc_W_[14], T_Wc_W_[15];
 
     vioParameters_.publishing.T_Wc_W = okvis::kinematics::Transformation(T_Wc_W_e);
@@ -314,15 +274,13 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
   for (size_t i = 0; i < calibrations.size(); ++i) {
 
     std::shared_ptr<const okvis::kinematics::Transformation> T_SC_okvis_ptr(
-          new okvis::kinematics::Transformation(calibrations[i].T_SC.r(),
-                                                calibrations[i].T_SC.q().normalized()));
+          new okvis::kinematics::Transformation(calibrations[i].T_SC.r(), calibrations[i].T_SC.q().normalized()));
 
     if (strcmp(calibrations[i].distortionType.c_str(), "equidistant") == 0) {
       vioParameters_.nCameraSystem.addCamera(
           T_SC_okvis_ptr,
           std::shared_ptr<const okvis::cameras::CameraBase>(
-              new okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion>(
+              new okvis::cameras::PinholeCamera<okvis::cameras::EquidistantDistortion>(
                   calibrations[i].imageDimension[0],
                   calibrations[i].imageDimension[1],
                   calibrations[i].focalLength[0],
@@ -337,15 +295,13 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
           okvis::cameras::NCameraSystem::Equidistant/*, computeOverlaps ?*/);
       std::stringstream s;
       s << calibrations[i].T_SC.T();
-      LOG(INFO) << "Equidistant pinhole camera " << camIdx
-                << " with T_SC=\n" << s.str();
+      LOG(INFO) << "Equidistant pinhole camera " << camIdx << " with T_SC=\n" << s.str();
     } else if (strcmp(calibrations[i].distortionType.c_str(), "radialtangential") == 0
                || strcmp(calibrations[i].distortionType.c_str(), "plumb_bob") == 0) {
       vioParameters_.nCameraSystem.addCamera(
           T_SC_okvis_ptr,
           std::shared_ptr<const okvis::cameras::CameraBase>(
-              new okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion>(
+              new okvis::cameras::PinholeCamera<okvis::cameras::RadialTangentialDistortion>(
                   calibrations[i].imageDimension[0],
                   calibrations[i].imageDimension[1],
                   calibrations[i].focalLength[0],
@@ -360,15 +316,13 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
           okvis::cameras::NCameraSystem::RadialTangential/*, computeOverlaps ?*/);
       std::stringstream s;
       s << calibrations[i].T_SC.T();
-      LOG(INFO) << "Radial tangential pinhole camera " << camIdx
-                << " with T_SC=\n" << s.str();
+      LOG(INFO) << "Radial tangential pinhole camera " << camIdx << " with T_SC=\n" << s.str();
     } else if (strcmp(calibrations[i].distortionType.c_str(), "radialtangential8") == 0
                || strcmp(calibrations[i].distortionType.c_str(), "plumb_bob8") == 0) {
       vioParameters_.nCameraSystem.addCamera(
           T_SC_okvis_ptr,
           std::shared_ptr<const okvis::cameras::CameraBase>(
-              new okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion8>(
+              new okvis::cameras::PinholeCamera<okvis::cameras::RadialTangentialDistortion8>(
                   calibrations[i].imageDimension[0],
                   calibrations[i].imageDimension[1],
                   calibrations[i].focalLength[0],
@@ -387,8 +341,7 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
           okvis::cameras::NCameraSystem::RadialTangential8/*, computeOverlaps ?*/);
       std::stringstream s;
       s << calibrations[i].T_SC.T();
-      LOG(INFO) << "Radial tangential 8 pinhole camera " << camIdx
-                << " with T_SC=\n" << s.str();
+      LOG(INFO) << "Radial tangential 8 pinhole camera " << camIdx << " with T_SC=\n" << s.str();
     } else {
       LOG(ERROR) << "unrecognized distortion type " << calibrations[i].distortionType;
     }
@@ -398,13 +351,13 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
   vioParameters_.sensors_information.imuIdx = 0;
 
   cv::FileNode T_BS_ = file["imu_params"]["T_BS"];
-  OKVIS_ASSERT_TRUE(
-      Exception,
-      T_BS_.isSeq(),
-      "'T_BS' parameter missing in the configuration file or in the wrong format.")
+  OKVIS_ASSERT_TRUE(Exception, T_BS_.isSeq(), "'T_BS' parameter missing in the configuration file or in the wrong format.")
 
   Eigen::Matrix4d T_BS_e;
-  T_BS_e << T_BS_[0], T_BS_[1], T_BS_[2], T_BS_[3], T_BS_[4], T_BS_[5], T_BS_[6], T_BS_[7], T_BS_[8], T_BS_[9], T_BS_[10], T_BS_[11], T_BS_[12], T_BS_[13], T_BS_[14], T_BS_[15];
+  T_BS_e << T_BS_[0],  T_BS_[1],  T_BS_[2],  T_BS_[3],
+            T_BS_[4],  T_BS_[5],  T_BS_[6],  T_BS_[7],
+            T_BS_[8],  T_BS_[9],  T_BS_[10], T_BS_[11],
+            T_BS_[12], T_BS_[13], T_BS_[14], T_BS_[15];
 
   vioParameters_.imu.T_BS = okvis::kinematics::Transformation(T_BS_e);
   std::stringstream s;
@@ -413,40 +366,18 @@ void VioParametersReader::readConfigFile(const std::string& filename) {
 
   // the IMU parameters
   cv::FileNode imu_params = file["imu_params"];
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["a_max"].isReal(),
-      "'imu_params: a_max' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["g_max"].isReal(),
-      "'imu_params: g_max' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["sigma_g_c"].isReal(),
-      "'imu_params: sigma_g_c' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["sigma_a_c"].isReal(),
-      "'imu_params: sigma_a_c' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-       Exception, imu_params["sigma_bg"].isReal(),
-       "'imu_params: sigma_bg' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-       Exception, imu_params["sigma_ba"].isReal(),
-       "'imu_params: sigma_ba' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["sigma_gw_c"].isReal(),
-      "'imu_params: sigma_gw_c' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["sigma_g_c"].isReal(),
-      "'imu_params: sigma_g_c' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["tau"].isReal(),
-      "'imu_params: tau' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(Exception, imu_params["g"].isReal(),
-                    "'imu_params: g' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(Exception, imu_params["a0"].isSeq(),
-                    "'imu_params: a0' parameter missing in configuration file.");
-  OKVIS_ASSERT_TRUE(
-      Exception, imu_params["imu_rate"].isInt(),
-      "'imu_params: imu_rate' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["a_max"].isReal(), "'imu_params: a_max' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["g_max"].isReal(), "'imu_params: g_max' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_g_c"].isReal(), "'imu_params: sigma_g_c' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_a_c"].isReal(), "'imu_params: sigma_a_c' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_bg"].isReal(), "'imu_params: sigma_bg' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_ba"].isReal(), "'imu_params: sigma_ba' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_gw_c"].isReal(), "'imu_params: sigma_gw_c' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["sigma_g_c"].isReal(), "'imu_params: sigma_g_c' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["tau"].isReal(), "'imu_params: tau' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["g"].isReal(), "'imu_params: g' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["a0"].isSeq(), "'imu_params: a0' parameter missing in configuration file.");
+  OKVIS_ASSERT_TRUE(Exception, imu_params["imu_rate"].isInt(), "'imu_params: imu_rate' parameter missing in configuration file.");
   imu_params["a_max"] >> vioParameters_.imu.a_max;
   imu_params["g_max"] >> vioParameters_.imu.g_max;
   imu_params["sigma_g_c"] >> vioParameters_.imu.sigma_g_c;
@@ -535,11 +466,9 @@ bool VioParametersReader::getCalibrationViaConfig(
   calibrations.clear();
   bool gotCalibration = false;
   // first check if calibration is available in config file
-  if (cameraNode.isSeq()
-     && cameraNode.size() > 0) {
+  if (cameraNode.isSeq() && cameraNode.size() > 0) {
     size_t camIdx = 0;
-    for (cv::FileNodeIterator it = cameraNode.begin();
-        it != cameraNode.end(); ++it) {
+    for (cv::FileNodeIterator it = cameraNode.begin(); it != cameraNode.end(); ++it) {
       if ((*it).isMap()
           && (*it)["T_SC"].isSeq()
           && (*it)["image_dimension"].isSeq()
@@ -565,8 +494,7 @@ bool VioParametersReader::getCalibrationViaConfig(
     LOG(INFO) << "Did not find a calibration in the configuration file.";
 
   if (gotCalibration) {
-    for (cv::FileNodeIterator it = cameraNode.begin();
-        it != cameraNode.end(); ++it) {
+    for (cv::FileNodeIterator it = cameraNode.begin(); it != cameraNode.end(); ++it) {
 
       CameraCalibration calib;
 
@@ -578,7 +506,10 @@ bool VioParametersReader::getCalibrationViaConfig(
 
       // extrinsics
       Eigen::Matrix4d T_SC;
-      T_SC << T_SC_node[0], T_SC_node[1], T_SC_node[2], T_SC_node[3], T_SC_node[4], T_SC_node[5], T_SC_node[6], T_SC_node[7], T_SC_node[8], T_SC_node[9], T_SC_node[10], T_SC_node[11], T_SC_node[12], T_SC_node[13], T_SC_node[14], T_SC_node[15];
+      T_SC << T_SC_node[0],  T_SC_node[1],  T_SC_node[2],  T_SC_node[3],
+              T_SC_node[4],  T_SC_node[5],  T_SC_node[6],  T_SC_node[7],
+              T_SC_node[8],  T_SC_node[9],  T_SC_node[10], T_SC_node[11],
+              T_SC_node[12], T_SC_node[13], T_SC_node[14], T_SC_node[15];
       calib.T_SC = okvis::kinematics::Transformation(T_SC);
 
       calib.imageDimension << imageDimensionNode[0], imageDimensionNode[1];

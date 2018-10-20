@@ -215,8 +215,7 @@ bool ThreadedKFVio::addImage(const okvis::Time & stamp, size_t cameraIndex,
     cameraMeasurementsReceived_[cameraIndex]->PushBlockingIfFull(frame, 1);
     return true;
   } else {
-    cameraMeasurementsReceived_[cameraIndex]->PushNonBlockingDroppingIfFull(
-        frame, max_camera_input_queue_size);
+    cameraMeasurementsReceived_[cameraIndex]->PushNonBlockingDroppingIfFull(frame, max_camera_input_queue_size);
     return cameraMeasurementsReceived_[cameraIndex]->Size() == 1;
   }
 }
@@ -246,8 +245,7 @@ bool ThreadedKFVio::addImuMeasurement(const okvis::Time & stamp,
     imuMeasurementsReceived_.PushBlockingIfFull(imu_measurement, 1);
     return true;
   } else {
-    imuMeasurementsReceived_.PushNonBlockingDroppingIfFull(
-        imu_measurement, maxImuInputQueueSize_);
+    imuMeasurementsReceived_.PushNonBlockingDroppingIfFull(imu_measurement, maxImuInputQueueSize_);
     return imuMeasurementsReceived_.Size() == 1;
   }
 }
@@ -324,6 +322,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     if (cameraMeasurementsReceived_[cameraIndex]->PopBlocking(&frame) == false) {
       return;
     }
+
     beforeDetectTimer.start();
     {  // lock the frame synchronizer
       waitForFrameSynchronizerMutexTimer.start();
@@ -334,6 +333,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
       multiFrame = frameSynchronizer_.addNewFrame(frame);
       addNewFrameToSynchronizerTimer.stop();
     }  // unlock frameSynchronizer only now as we can be sure that not two states are added for the same timestamp
+
     okvis::kinematics::Transformation T_WS;
     okvis::Time lastTimestamp;
     okvis::SpeedAndBias speedAndBiases;
@@ -348,23 +348,20 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     }
 
     // -- get relevant imu messages for new state
-    okvis::Time imuDataEndTime = multiFrame->timestamp()
-        + temporal_imu_data_overlap;
+    okvis::Time imuDataEndTime   = multiFrame->timestamp() + temporal_imu_data_overlap;
     okvis::Time imuDataBeginTime = lastTimestamp - temporal_imu_data_overlap;
 
     OKVIS_ASSERT_TRUE_DBG(Exception,imuDataBeginTime < imuDataEndTime,"imu data end time is smaller than begin time.");
 
     // wait until all relevant imu messages have arrived and check for termination request
-    if (imuFrameSynchronizer_.waitForUpToDateImuData(
-      okvis::Time(imuDataEndTime)) == false)  {
+    if (imuFrameSynchronizer_.waitForUpToDateImuData(okvis::Time(imuDataEndTime)) == false)  {
       return;
     }
     OKVIS_ASSERT_TRUE_DBG(Exception,
                           imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
 
-    okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime,
-                                                           imuDataEndTime);
+    okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
 
     // if imu_data is empty, either end_time > begin_time or
     // no measurements in timeframe, should not happen, as we waited for measurements
@@ -390,8 +387,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
         lastOptimizedSpeedAndBiases_.segment<3>(6) = imu_params_.a0;
         lastOptimizedStateTimestamp_ = multiFrame->timestamp();
       }
-      OKVIS_ASSERT_TRUE_DBG(Exception, success,
-          "pose could not be initialized from imu measurements.");
+      OKVIS_ASSERT_TRUE_DBG(Exception, success, "pose could not be initialized from imu measurements.");
       if (!success) {
         beforeDetectTimer.stop();
         continue;
@@ -454,13 +450,15 @@ void ThreadedKFVio::matchingLoop() {
       return;
 
     prepareToAddStateTimer.start();
+
     // -- get relevant imu messages for new state
     okvis::Time imuDataEndTime = frame->timestamp() + temporal_imu_data_overlap;
     okvis::Time imuDataBeginTime = lastAddedStateTimestamp_
         - temporal_imu_data_overlap;
 
-    OKVIS_ASSERT_TRUE_DBG(Exception,imuDataBeginTime < imuDataEndTime,
-        "imu data end time is smaller than begin time." <<
+    OKVIS_ASSERT_TRUE_DBG(Exception,
+                          imuDataBeginTime < imuDataEndTime,
+                          "imu data end time is smaller than begin time." <<
         "current frametimestamp " << frame->timestamp() << " (id: " << frame->id() <<
         "last timestamp         " << lastAddedStateTimestamp_ << " (id: " << estimator_.currentFrameId());
 
@@ -471,10 +469,10 @@ void ThreadedKFVio::matchingLoop() {
         imuDataEndTime < imuMeasurements_.back().timeStamp,
         "Waiting for up to date imu data seems to have failed!");
 
-    okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime,
-                                                           imuDataEndTime);
+    okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
 
     prepareToAddStateTimer.stop();
+
     // if imu_data is empty, either end_time > begin_time or
     // no measurements in timeframe, should not happen, as we waited for measurements
     if (imuData.size() == 0)
@@ -488,6 +486,7 @@ void ThreadedKFVio::matchingLoop() {
       while (!optimizationDone_)
         optimizationNotification_.wait(l);
       waitForOptimizationTimer.stop();
+
       addStateTimer.start();
       okvis::Time t0Matching = okvis::Time::now();
       bool asKeyframe = false;
@@ -504,16 +503,15 @@ void ThreadedKFVio::matchingLoop() {
       okvis::kinematics::Transformation T_WS;
       estimator_.get_T_WS(frame->id(), T_WS);
       matchingTimer.start();
-      frontend_.dataAssociationAndInitialization(estimator_, T_WS, parameters_,
-                                                 map_, frame, &asKeyframe);
+      frontend_.dataAssociationAndInitialization(estimator_, T_WS, parameters_, map_, frame, &asKeyframe);
       matchingTimer.stop();
+
       if (asKeyframe)
         estimator_.setKeyframe(frame->id(), asKeyframe);
       if(!blocking_) {
         double timeLimit = parameters_.optimization.timeLimitForMatchingAndOptimization
                            -(okvis::Time::now()-t0Matching).toSec();
-        estimator_.setOptimizationTimeLimit(std::max<double>(0.0, timeLimit),
-                                            parameters_.optimization.min_iterations);
+        estimator_.setOptimizationTimeLimit(std::max<double>(0.0, timeLimit), parameters_.optimization.min_iterations);
       }
       optimizationDone_ = false;
     }  // unlock estimator_mutex_
@@ -646,24 +644,20 @@ void ThreadedKFVio::display() {
 }
 
 // Get a subset of the recorded IMU measurements.
-okvis::ImuMeasurementDeque ThreadedKFVio::getImuMeasurments(
-    okvis::Time& imuDataBeginTime, okvis::Time& imuDataEndTime) {
+okvis::ImuMeasurementDeque ThreadedKFVio::getImuMeasurments(okvis::Time& imuDataBeginTime,
+                                                            okvis::Time& imuDataEndTime) {
   // sanity checks:
   // if end time is smaller than begin time, return empty queue.
   // if begin time is larger than newest imu time, return empty queue.
-  if (imuDataEndTime < imuDataBeginTime
-      || imuDataBeginTime > imuMeasurements_.back().timeStamp)
+  if (imuDataEndTime < imuDataBeginTime || imuDataBeginTime > imuMeasurements_.back().timeStamp)
     return okvis::ImuMeasurementDeque();
 
   std::lock_guard<std::mutex> lock(imuMeasurements_mutex_);
   // get iterator to imu data before previous frame
-  okvis::ImuMeasurementDeque::iterator first_imu_package = imuMeasurements_
-      .begin();
-  okvis::ImuMeasurementDeque::iterator last_imu_package =
-      imuMeasurements_.end();
+  okvis::ImuMeasurementDeque::iterator first_imu_package = imuMeasurements_.begin();
+  okvis::ImuMeasurementDeque::iterator last_imu_package  = imuMeasurements_.end();
   // TODO go backwards through queue. Is probably faster.
-  for (auto iter = imuMeasurements_.begin(); iter != imuMeasurements_.end();
-      ++iter) {
+  for (auto iter = imuMeasurements_.begin(); iter != imuMeasurements_.end(); ++iter) {
     // move first_imu_package iterator back until iter->timeStamp is higher than requested begintime
     if (iter->timeStamp <= imuDataBeginTime)
       first_imu_package = iter;

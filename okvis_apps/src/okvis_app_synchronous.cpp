@@ -75,7 +75,8 @@ class PoseViewer
   }
   // this we can register as a callback
   void publishFullStateAsCallback(
-      const okvis::Time & /*t*/, const okvis::kinematics::Transformation & T_WS,
+      const okvis::Time & /*t*/,
+      const okvis::kinematics::Transformation & T_WS,
       const Eigen::Matrix<double, 9, 1> & speedAndBiases,
       const Eigen::Matrix<double, 3, 1> & /*omega_S*/)
   {
@@ -168,8 +169,7 @@ class PoseViewer
         _heights.erase(_heights.begin() + i + 1);
         continue;
       }
-      double rel_height = (_heights[i] - _min_z + _heights[i + 1] - _min_z)
-                      * 0.5 / (_max_z - _min_z);
+      double rel_height = (_heights[i] - _min_z + _heights[i + 1] - _min_z) * 0.5 / (_max_z - _min_z);
       cv::line(
           _image,
           p0,
@@ -183,13 +183,13 @@ class PoseViewer
   cv::Mat _image;
   std::vector<cv::Point2d> _path;
   std::vector<double> _heights;
-  double _scale = 1.0;
+  double _scale =  1.0;
   double _min_x = -0.5;
   double _min_y = -0.5;
   double _min_z = -0.5;
-  double _max_x = 0.5;
-  double _max_y = 0.5;
-  double _max_z = 0.5;
+  double _max_x =  0.5;
+  double _max_y =  0.5;
+  double _max_z =  0.5;
   const double _frameScale = 0.2;  // [m]
   std::atomic_bool drawing_;
   std::atomic_bool showing_;
@@ -199,7 +199,7 @@ class PoseViewer
 int main(int argc, char **argv)
 {
   google::InitGoogleLogging(argv[0]);
-  FLAGS_stderrthreshold = 0;  // INFO: 0, WARNING: 1, ERROR: 2, FATAL: 3
+  FLAGS_stderrthreshold  = 0;  // INFO: 0, WARNING: 1, ERROR: 2, FATAL: 3
   FLAGS_colorlogtostderr = 1;
 
   if (argc != 3 && argc != 4) {
@@ -262,8 +262,7 @@ int main(int argc, char **argv)
     num_camera_images = 0;
     std::string folder(path + "/cam" + std::to_string(i) + "/data");
 
-    for (auto it = boost::filesystem::directory_iterator(folder);
-        it != boost::filesystem::directory_iterator(); it++) {
+    for (auto it = boost::filesystem::directory_iterator(folder); it != boost::filesystem::directory_iterator(); it++) {
       if (!boost::filesystem::is_directory(it->path())) {  //we eliminate directories
         num_camera_images++;
         image_names.at(i).push_back(it->path().filename().string());
