@@ -1,8 +1,19 @@
+<?xml version="1.0"?>
+
 <launch>
-  <node name="okvis_node" pkg="okvis_ros" type="okvis_node_synchronous" output="screen" args="$(arg config) $(arg bag)">
-    <param name="mesh_file" value="firefly.dae" />
-    <param name="camera_topic_0" value="/cam0/image_raw" />
-    <param name="camera_topic_1" value="/cam1/image_raw" />
-    <param name="imu_topic" value="/imu0" />
-  </node>
+
+    <arg name="mono" default="false"/>
+
+    <arg if="$(arg mono)"     name="config" default="$(find okvis_ros)/okvis/config/config_fpga_p2_euroc_mono.yaml"/>
+    <arg unless="$(arg mono)" name="config" default="$(find okvis_ros)/okvis/config/config_fpga_p2_euroc.yaml"/>
+
+    <arg name="bag"    default="/home/cg/dev_sdb/datasets/ETH_ASL_Datasets/EuRoC_MAV/MH_01_easy.bag"/>
+
+    <node name="okvis_node" pkg="okvis_ros" type="okvis_node_synchronous" output="screen" args="$(arg config) $(arg bag)">
+        <param name="mesh_file"      value="firefly.dae" />
+        <param name="camera_topic_0" value="/cam0/image_raw" />
+        <param unless="$(arg mono)" name="camera_topic_1" value="/cam1/image_raw" />
+        <param name="imu_topic"      value="/imu0" />
+    </node>
+
 </launch>
