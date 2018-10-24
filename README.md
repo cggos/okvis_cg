@@ -15,36 +15,64 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
 
 -----
 
-## Build & Run
+## Build
 
-### okvis
+* okvis
+  ```bash
+  cd okvis
+  mkdir build & cd build
+  cmake .. & make -j4
+  ```
+* okvis_ros
+  ```bash
+  catkin_make
+  ```
 
-#### Build
+## Run
+
+* okvis
+
+MH_01_easy Dataset:
+
 ```bash
-cd okvis
-mkdir build & cd build
-cmake .. & make -j4
+./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy/mav0/
 ```
-#### Run
 
-* Dataset
-  ```bash
-  ./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy/mav0/
-  ```
+* okvis_ros
 
-### okvis_ros
+MH_01_easy Dataset:
 
-#### Build
 ```bash
-catkin_make
+rosrun okvis_ros okvis_node_synchronous path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy.bag
 ```
-#### Run
+or  
+```bash
+roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
+```
 
-* Dataset
-  ```bash
-  rosrun okvis_ros okvis_node_synchronous path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy.bag
-  ```
-  or  
-  ```bash
-  roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
-  ```
+## Supported Camera and Distortion models
+
+* pinhole camera model (pinhole) [fu fv pu pv]
+  - equidistant [k1 k2 k3 k4]
+  - radialtangential (plumb_bob) [k1 k2 r1 r2]
+  - radialtangential8 (plumb_bob8)
+  - none
+
+## Outputs and frames
+
+In terms of coordinate frames and notation,
+
+* W denotes the OKVIS World frame (z up),
+* C_i denotes the i-th camera frame
+* S denotes the IMU sensor frame
+* B denotes a (user-specified) body frame.
+
+The output of the okvis library is the pose T_WS as a position r_WS and quaternion q_WS, followed by the velocity in World frame v_W and gyro biases (b_g) as well as accelerometer biases (b_a).
+
+## HEALTH WARNING
+If you would like to run the software/library on your own **hardware setup**, be aware that good results (or results at all) may only be obtained with appropriate calibration of the
+
+* camera intrinsics,
+* camera extrinsics (poses relative to the IMU),
+* knowledge about the IMU noise parameters,
+* and **ACCURATE TIME SYNCHRONISATION OF ALL SENSORS**.
