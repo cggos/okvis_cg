@@ -102,6 +102,7 @@ bool Frontend::detectAndDescribe(size_t cameraIndex,
 
   frameOut->detect(cameraIndex);
 
+  // 获取重力方向，提高描述子匹配鲁棒性
   // ExtractionDirection == gravity direction in camera frame
   Eigen::Vector3d g_in_W(0, 0, -1);
   Eigen::Vector3d extractionDirection = T_WC.inverse().C() * g_in_W;

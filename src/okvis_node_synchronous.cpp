@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
   FLAGS_colorlogtostderr = 1;
 
   if (argc != 3 && argc != 4) {
-    LOG(ERROR) <<
-        "Usage: ./" << argv[0] << " configuration-yaml-file bag-to-read-from [skip-first-seconds]";
+    LOG(ERROR) << "Usage: ./" << argv[0] << " configuration-yaml-file bag-to-read-from [skip-first-seconds]";
     return -1;
   }
 
@@ -132,9 +131,7 @@ int main(int argc, char **argv) {
   rosbag::Bag bag(argv[2], rosbag::bagmode::Read);
   // views on topics. the slash is needs to be correct, it's ridiculous...
   std::string imu_topic("/imu0");
-  rosbag::View view_imu(
-      bag,
-      rosbag::TopicQuery(imu_topic));
+  rosbag::View view_imu(bag, rosbag::TopicQuery(imu_topic));
   if (view_imu.size() == 0) {
     LOG(ERROR) << "no imu topic";
     return -1;
@@ -148,20 +145,15 @@ int main(int argc, char **argv) {
   okvis::Time latest(0);
   for(size_t i=0; i<numCameras;++i) {
     std::string camera_topic("/cam"+std::to_string(i)+"/image_raw");
-    std::shared_ptr<rosbag::View> view_ptr(
-        new rosbag::View(
-            bag,
-            rosbag::TopicQuery(camera_topic)));
+    std::shared_ptr<rosbag::View> view_ptr(new rosbag::View(bag, rosbag::TopicQuery(camera_topic)));
     if (view_ptr->size() == 0) {
       LOG(ERROR) << "no camera topic";
       return 1;
     }
     view_cams_ptr.push_back(view_ptr);
     view_cam_iterators.push_back(view_ptr->begin());
-    sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]
-        ->instantiate<sensor_msgs::Image>();
-    times.push_back(
-        okvis::Time(msg1->header.stamp.sec, msg1->header.stamp.nsec));
+    sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]->instantiate<sensor_msgs::Image>();
+    times.push_back(okvis::Time(msg1->header.stamp.sec, msg1->header.stamp.nsec));
     if (times.back() > latest)
       latest = times.back();
     LOG(INFO) << "No. cam " << i << " messages: " << view_cams_ptr.back()->size();
@@ -203,8 +195,7 @@ int main(int argc, char **argv) {
     // add images
     okvis::Time t;
     for(size_t i=0; i<numCameras;++i) {
-      sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]
-          ->instantiate<sensor_msgs::Image>();
+      sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]->instantiate<sensor_msgs::Image>();
       cv::Mat filtered(msg1->height, msg1->width, CV_8UC1);
       memcpy(filtered.data, &msg1->data[0], msg1->height * msg1->width);
       t = okvis::Time(msg1->header.stamp.sec, msg1->header.stamp.nsec);
@@ -215,13 +206,9 @@ int main(int argc, char **argv) {
       // get all IMU measurements till then
       okvis::Time t_imu=start;
       do {
-        sensor_msgs::ImuConstPtr msg = view_imu_iterator
-            ->instantiate<sensor_msgs::Imu>();
-        Eigen::Vector3d gyr(msg->angular_velocity.x, msg->angular_velocity.y,
-                            msg->angular_velocity.z);
-        Eigen::Vector3d acc(msg->linear_acceleration.x,
-                            msg->linear_acceleration.y,
-                            msg->linear_acceleration.z);
+        sensor_msgs::ImuConstPtr msg = view_imu_iterator->instantiate<sensor_msgs::Imu>();
+        Eigen::Vector3d gyr(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+        Eigen::Vector3d acc(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
 
         t_imu = okvis::Time(msg->header.stamp.sec, msg->header.stamp.nsec);
 
@@ -242,10 +229,7 @@ int main(int argc, char **argv) {
 
     // display progress
     if (counter % 20 == 0) {
-      std::cout
-          << "\rProgress: "
-          << int(double(counter) / double(view_cams_ptr.back()->size()) * 100)
-          << "%  " ;
+      std::cout << "\rProgress: " << int(double(counter) / double(view_cams_ptr.back()->size()) * 100) << "%  " ;
     }
 
   }

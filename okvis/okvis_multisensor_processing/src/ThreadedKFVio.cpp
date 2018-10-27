@@ -324,6 +324,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     }
 
     beforeDetectTimer.start();
+
     {  // lock the frame synchronizer
       waitForFrameSynchronizerMutexTimer.start();
       std::lock_guard<std::mutex> lock(frameSynchronizer_mutex_);
@@ -400,33 +401,35 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
                                           multiFrame->timestamp());
       propagationTimer.stop();
     }
-    okvis::kinematics::Transformation T_WC = T_WS
-        * (*parameters_.nCameraSystem.T_SC(frame->sensorId));
+
+    okvis::kinematics::Transformation T_WC = T_WS * (*parameters_.nCameraSystem.T_SC(frame->sensorId));
     beforeDetectTimer.stop();
+
     detectTimer.start();
     frontend_.detectAndDescribe(frame->sensorId, multiFrame, T_WC, nullptr);
     detectTimer.stop();
-    afterDetectTimer.start();
 
+    afterDetectTimer.start();
     bool push = false;
     {  // we now tell frame synchronizer that detectAndDescribe is done for MF with our timestamp
       waitForFrameSynchronizerMutexTimer2.start();
       std::lock_guard<std::mutex> lock(frameSynchronizer_mutex_);
       waitForFrameSynchronizerMutexTimer2.stop();
+
       frameSynchronizer_.detectionEndedForMultiFrame(multiFrame->id());
 
-      if (frameSynchronizer_.detectionCompletedForAllCameras(
-          multiFrame->id())) {
+      if (frameSynchronizer_.detectionCompletedForAllCameras(multiFrame->id())) {
 //        LOG(INFO) << "detection completed for multiframe with id "<< multi_frame->id();
         push = true;
       }
     }  // unlocking frame synchronizer
     afterDetectTimer.stop();
+
     if (push) {
       // use queue size 1 to propagate a congestion to the _cameraMeasurementsReceived queue
       // and check for termination request
       waitForMatchingThreadTimer.start();
-      if (keypointMeasurements_.PushBlockingIfFull(multiFrame, 1) == false) {
+      if (!keypointMeasurements_.PushBlockingIfFull(multiFrame, 1)) {
         return;
       }
       waitForMatchingThreadTimer.stop();

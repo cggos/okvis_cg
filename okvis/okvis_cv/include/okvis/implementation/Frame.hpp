@@ -115,9 +115,10 @@ int Frame::detect()
   landmarkIds_.clear(); // resizing and filling in zeros in Frame::describe() as some keypoints are removed there.
 
   // run the detector
-  OKVIS_ASSERT_TRUE_DBG(Exception, detector_ != NULL,
-                        "Detector not initialised!");
+  OKVIS_ASSERT_TRUE_DBG(Exception, detector_ != NULL, "Detector not initialised!");
+
   detector_->detect(image_, keypoints_);
+
   return keypoints_.size();
 }
 
@@ -128,14 +129,14 @@ int Frame::detect()
 int Frame::describe(const Eigen::Vector3d & extractionDirection)
 {
   // check initialisation
-  OKVIS_ASSERT_TRUE_DBG(Exception, extractor_ != NULL,
-                        "Detector not initialised!");
+  OKVIS_ASSERT_TRUE_DBG(Exception, extractor_ != NULL, "Detector not initialised!");
 
   // orient the keypoints according to the extraction direction:
   Eigen::Vector3d ep;
   Eigen::Vector2d reprojection;
   Eigen::Matrix<double, 2, 3> Jacobian;
   Eigen::Vector2d eg_projected;
+
   for (size_t k = 0; k < keypoints_.size(); ++k) {
     cv::KeyPoint& ckp = keypoints_[k];
     // project ray
@@ -151,9 +152,12 @@ int Frame::describe(const Eigen::Vector3d & extractionDirection)
 
   // extraction
   extractor_->compute(image_, keypoints_, descriptors_);
+
   landmarkIds_ = std::vector<uint64_t>(keypoints_.size(),0);
+
   return keypoints_.size();
 }
+
 // describe keypoints. This uses virtual function calls.
 ///        That's a negligibly small overhead for many detections.
 ///        \param extractionDirection the extraction direction in camera frame
