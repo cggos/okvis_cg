@@ -59,14 +59,13 @@ void DenseMatcher::matchBody(
   vMyBest.resize(matchingAlgorithm.sizeA());
 
   // this point is not paired so far, score max
-  vpairs.resize(matchingAlgorithm.sizeB(),
-                pairing_t(-1, std::numeric_limits<distance_t>::max()));
+  vpairs.resize(matchingAlgorithm.sizeB(), pairing_t(-1, std::numeric_limits<distance_t>::max()));
 
   // prepare the jobs for the threads
   std::vector<MatchJob> jobs(numMatcherThreads_);
   for (int i = 0; i < numMatcherThreads_; ++i) {
     jobs[i].iThreadID = i;
-    jobs[i].vpairs = &vpairs;
+    jobs[i].vpairs  = &vpairs;
     jobs[i].vMyBest = &vMyBest;
     jobs[i].mutexes = locks;
   }
@@ -94,23 +93,20 @@ void DenseMatcher::matchBody(
   // assemble the pairs and return
   const distance_t& const_distratiothres = matchingAlgorithm.distanceRatioThreshold();
   const distance_t& const_distthres = matchingAlgorithm.distanceThreshold();
+
   for (size_t i = 0; i < vpairs.size(); ++i) {
+
     if (useDistanceRatioThreshold_ && vpairs[i].distance < const_distthres) {
-      const std::vector<pairing_t>& best_matches_list =
-          vMyBest[vpairs[i].indexA];
-      OKVIS_ASSERT_TRUE_DBG(Exception, best_matches_list[0].indexA != -1,
-                            "assertion failed");
+
+      const std::vector<pairing_t>& best_matches_list = vMyBest[vpairs[i].indexA];
+      OKVIS_ASSERT_TRUE_DBG(Exception, best_matches_list[0].indexA != -1, "assertion failed");
 
       if (best_matches_list[1].indexA != -1) {
         const distance_t& best_match_distance = best_matches_list[0].distance;
-        const distance_t& second_best_match_distance = best_matches_list[1]
-            .distance;
+        const distance_t& second_best_match_distance = best_matches_list[1].distance;
         // Only assign if the distance ratio better than the threshold.
-        if (best_match_distance == 0
-            || second_best_match_distance / best_match_distance
-                > const_distratiothres) {
-          matchingAlgorithm.setBestMatch(vpairs[i].indexA, i,
-                                         vpairs[i].distance);
+        if (best_match_distance == 0 || second_best_match_distance / best_match_distance > const_distratiothres) {
+          matchingAlgorithm.setBestMatch(vpairs[i].indexA, i, vpairs[i].distance);
         }
       } else {
         // If there is only one matching feature, we assign it.
@@ -131,8 +127,7 @@ void DenseMatcher::match(MATCHING_ALGORITHM_T & matchingAlgorithm) {
   matchingAlgorithm.doSetup();
 
   // call the matching body with the linear matching function pointer
-  matchBody(&DenseMatcher::template doWorkLinearMatching<matching_algorithm_t>,
-            matchingAlgorithm);
+  matchBody(&DenseMatcher::template doWorkLinearMatching<matching_algorithm_t>, matchingAlgorithm);
 }
 
 // Execute a matching algorithm implementing image space matching.
@@ -142,9 +137,7 @@ void DenseMatcher::matchInImageSpace(MATCHING_ALGORITHM_T & matchingAlgorithm) {
   matchingAlgorithm.doSetup();
 
   // call the matching body with the image space matching function pointer
-  matchBody(
-      &DenseMatcher::template doWorkImageSpaceMatching<matching_algorithm_t>,
-      matchingAlgorithm);
+  matchBody(&DenseMatcher::template doWorkImageSpaceMatching<matching_algorithm_t>, matchingAlgorithm);
 }
 
 // This calculates the distance between to keypoint descriptors. If it is better than the /e numBest_

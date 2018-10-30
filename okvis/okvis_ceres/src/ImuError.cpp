@@ -81,7 +81,7 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
 
   // now the propagation
   okvis::Time time = t0_;
-  okvis::Time end = t1_;
+  okvis::Time end  = t1_;
 
   // sanity check:
   assert(imuMeasurements_.front().timeStamp<=time);
@@ -89,10 +89,10 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
     return -1;  // nothing to do...
 
   // increments (initialise with identity)
-  Delta_q_ = Eigen::Quaterniond(1, 0, 0, 0);
-  C_integral_ = Eigen::Matrix3d::Zero();
-  C_doubleintegral_ = Eigen::Matrix3d::Zero();
-  acc_integral_ = Eigen::Vector3d::Zero();
+  Delta_q_            = Eigen::Quaterniond(1, 0, 0, 0);
+  C_integral_         = Eigen::Matrix3d::Zero();
+  C_doubleintegral_   = Eigen::Matrix3d::Zero();
+  acc_integral_       = Eigen::Vector3d::Zero();
   acc_doubleintegral_ = Eigen::Vector3d::Zero();
 
   // cross matrix accumulatrion
@@ -100,8 +100,8 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
 
   // sub-Jacobians
   dalpha_db_g_ = Eigen::Matrix3d::Zero();
-  dv_db_g_ = Eigen::Matrix3d::Zero();
-  dp_db_g_ = Eigen::Matrix3d::Zero();
+  dv_db_g_     = Eigen::Matrix3d::Zero();
+  dp_db_g_     = Eigen::Matrix3d::Zero();
 
   // the Jacobian of the increment (w/o biases)
   P_delta_ = Eigen::Matrix<double, 15, 15>::Zero();
@@ -112,13 +112,12 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
   double Delta_t = 0;
   bool hasStarted = false;
   int i = 0;
-  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements_.begin();
-      it != imuMeasurements_.end(); ++it) {
+  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements_.begin(); it != imuMeasurements_.end(); ++it) {
 
     Eigen::Vector3d omega_S_0 = it->measurement.gyroscopes;
-    Eigen::Vector3d acc_S_0 = it->measurement.accelerometers;
+    Eigen::Vector3d acc_S_0   = it->measurement.accelerometers;
     Eigen::Vector3d omega_S_1 = (it + 1)->measurement.gyroscopes;
-    Eigen::Vector3d acc_S_1 = (it + 1)->measurement.accelerometers;
+    Eigen::Vector3d acc_S_1   = (it + 1)->measurement.accelerometers;
 
     // time delta
     okvis::Time nexttime;
@@ -134,7 +133,7 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
       dt = (nexttime - time).toSec();
       const double r = dt / interval;
       omega_S_1 = ((1.0 - r) * omega_S_0 + r * omega_S_1).eval();
-      acc_S_1 = ((1.0 - r) * acc_S_0 + r * acc_S_1).eval();
+      acc_S_1   = ((1.0 - r) * acc_S_0   + r * acc_S_1).eval();
     }
 
     if (dt <= 0.0) {
@@ -146,7 +145,7 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
       hasStarted = true;
       const double r = dt / (nexttime - it->timeStamp).toSec();
       omega_S_0 = (r * omega_S_0 + (1.0 - r) * omega_S_1).eval();
-      acc_S_0 = (r * acc_S_0 + (1.0 - r) * acc_S_1).eval();
+      acc_S_0   = (r * acc_S_0   + (1.0 - r) * acc_S_1).eval();
     }
 
     // ensure integrity
@@ -175,59 +174,56 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
     // actual propagation
     // orientation:
     Eigen::Quaterniond dq;
-    const Eigen::Vector3d omega_S_true = (0.5 * (omega_S_0 + omega_S_1)
-        - speedAndBiases.segment < 3 > (3));
+
+    const Eigen::Vector3d omega_S_true = (0.5 * (omega_S_0 + omega_S_1) - speedAndBiases.segment < 3 > (3));
+
     const double theta_half = omega_S_true.norm() * 0.5 * dt;
     const double sinc_theta_half = ode::sinc(theta_half);
-    const double cos_theta_half = cos(theta_half);
+    const double cos_theta_half  = cos(theta_half);
+
     dq.vec() = sinc_theta_half * omega_S_true * 0.5 * dt;
-    dq.w() = cos_theta_half;
+    dq.w()   = cos_theta_half;
+
     Eigen::Quaterniond Delta_q_1 = Delta_q_ * dq;
+
     // rotation matrix integral:
-    const Eigen::Matrix3d C = Delta_q_.toRotationMatrix();
+    const Eigen::Matrix3d C   = Delta_q_.toRotationMatrix();
     const Eigen::Matrix3d C_1 = Delta_q_1.toRotationMatrix();
-    const Eigen::Vector3d acc_S_true = (0.5 * (acc_S_0 + acc_S_1)
-        - speedAndBiases.segment < 3 > (6));
-    const Eigen::Matrix3d C_integral_1 = C_integral_ + 0.5 * (C + C_1) * dt;
-    const Eigen::Vector3d acc_integral_1 = acc_integral_
-        + 0.5 * (C + C_1) * acc_S_true * dt;
+
+    const Eigen::Vector3d acc_S_true = (0.5 * (acc_S_0 + acc_S_1) - speedAndBiases.segment < 3 > (6));
+
+    const Eigen::Matrix3d C_integral_1   = C_integral_   + 0.5 * (C + C_1) * dt;
+    const Eigen::Vector3d acc_integral_1 = acc_integral_ + 0.5 * (C + C_1) * acc_S_true * dt;
+
     // rotation matrix double integral:
-    C_doubleintegral_ += C_integral_ * dt + 0.25 * (C + C_1) * dt * dt;
-    acc_doubleintegral_ += acc_integral_ * dt
-        + 0.25 * (C + C_1) * acc_S_true * dt * dt;
+    C_doubleintegral_   += C_integral_   * dt + 0.25 * (C + C_1) * dt * dt;
+    acc_doubleintegral_ += acc_integral_ * dt + 0.25 * (C + C_1) * acc_S_true * dt * dt;
 
     // Jacobian parts
     dalpha_db_g_ += C_1 * okvis::kinematics::rightJacobian(omega_S_true * dt) * dt;
-    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix() * cross_
-        + okvis::kinematics::rightJacobian(omega_S_true * dt) * dt;
+
+    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix() * cross_ + okvis::kinematics::rightJacobian(omega_S_true * dt) * dt;
     const Eigen::Matrix3d acc_S_x = okvis::kinematics::crossMx(acc_S_true);
-    Eigen::Matrix3d dv_db_g_1 = dv_db_g_
-        + 0.5 * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
-    dp_db_g_ += dt * dv_db_g_
-        + 0.25 * dt * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
+
+    Eigen::Matrix3d dv_db_g_1 = dv_db_g_ + 0.5 * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
+    dp_db_g_ += dt * dv_db_g_ + 0.25 * dt * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
 
     // covariance propagation
-    Eigen::Matrix<double, 15, 15> F_delta =
-        Eigen::Matrix<double, 15, 15>::Identity();
+    Eigen::Matrix<double, 15, 15> F_delta = Eigen::Matrix<double, 15, 15>::Identity();
     // transform
-    F_delta.block<3, 3>(0, 3) = -okvis::kinematics::crossMx(
-        acc_integral_ * dt + 0.25 * (C + C_1) * acc_S_true * dt * dt);
-    F_delta.block<3, 3>(0, 6) = Eigen::Matrix3d::Identity() * dt;
-    F_delta.block<3, 3>(0, 9) = dt * dv_db_g_
-        + 0.25 * dt * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
-    F_delta.block<3, 3>(0, 12) = -C_integral_ * dt
-        + 0.25 * (C + C_1) * dt * dt;
-    F_delta.block<3, 3>(3, 9) = -dt * C_1;
-    F_delta.block<3, 3>(6, 3) = -okvis::kinematics::crossMx(
-        0.5 * (C + C_1) * acc_S_true * dt);
-    F_delta.block<3, 3>(6, 9) = 0.5 * dt
-        * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
+    F_delta.block<3, 3>(0, 3)  = -okvis::kinematics::crossMx(acc_integral_ * dt + 0.25 * (C + C_1) * acc_S_true * dt * dt);
+    F_delta.block<3, 3>(0, 6)  =  Eigen::Matrix3d::Identity() * dt;
+    F_delta.block<3, 3>(0, 9)  =  dt * dv_db_g_ + 0.25 * dt * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
+    F_delta.block<3, 3>(0, 12) = -C_integral_ * dt + 0.25 * (C + C_1) * dt * dt;
+    F_delta.block<3, 3>(3, 9)  = -dt * C_1;
+    F_delta.block<3, 3>(6, 3)  = -okvis::kinematics::crossMx(0.5 * (C + C_1) * acc_S_true * dt);
+    F_delta.block<3, 3>(6, 9)  =  0.5 * dt * (C * acc_S_x * cross_ + C_1 * acc_S_x * cross_1);
     F_delta.block<3, 3>(6, 12) = -0.5 * (C + C_1) * dt;
     P_delta_ = F_delta * P_delta_ * F_delta.transpose();
+
     // add noise. Note that transformations with rotation matrices can be ignored, since the noise is isotropic.
     //F_tot = F_delta*F_tot;
-    const double sigma2_dalpha = dt * sigma_g_c
-        * sigma_g_c;
+    const double sigma2_dalpha = dt * sigma_g_c * sigma_g_c;
     P_delta_(3, 3) += sigma2_dalpha;
     P_delta_(4, 4) += sigma2_dalpha;
     P_delta_(5, 5) += sigma2_dalpha;
@@ -249,10 +245,10 @@ int ImuError::redoPreintegration(const okvis::kinematics::Transformation& /*T_WS
     P_delta_(14, 14) += sigma2_b_a;
 
     // memory shift
-    Delta_q_ = Delta_q_1;
-    C_integral_ = C_integral_1;
+    Delta_q_      = Delta_q_1;
+    C_integral_   = C_integral_1;
     acc_integral_ = acc_integral_1;
-    cross_ = cross_1;
+    cross_   = cross_1;
     dv_db_g_ = dv_db_g_1;
     time = nexttime;
 
@@ -289,12 +285,13 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
                           okvis::kinematics::Transformation& T_WS,
                           okvis::SpeedAndBias & speedAndBiases,
                           const okvis::Time & t_start,
-                          const okvis::Time & t_end, covariance_t* covariance,
+                          const okvis::Time & t_end,
+                          covariance_t* covariance,
                           jacobian_t* jacobian) {
 
   // now the propagation
   okvis::Time time = t_start;
-  okvis::Time end = t_end;
+  okvis::Time end  = t_end;
 
   // sanity check:
   assert(imuMeasurements.front().timeStamp<=time);
@@ -302,15 +299,15 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
     return -1;  // nothing to do...
 
   // initial condition
-  Eigen::Vector3d r_0 = T_WS.r();
+  Eigen::Vector3d       r_0 = T_WS.r();
   Eigen::Quaterniond q_WS_0 = T_WS.q();
-  Eigen::Matrix3d C_WS_0 = T_WS.C();
+  Eigen::Matrix3d    C_WS_0 = T_WS.C();
 
   // increments (initialise with identity)
   Eigen::Quaterniond Delta_q(1,0,0,0);
-  Eigen::Matrix3d C_integral = Eigen::Matrix3d::Zero();
-  Eigen::Matrix3d C_doubleintegral = Eigen::Matrix3d::Zero();
-  Eigen::Vector3d acc_integral = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d C_integral         = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d C_doubleintegral   = Eigen::Matrix3d::Zero();
+  Eigen::Vector3d acc_integral       = Eigen::Vector3d::Zero();
   Eigen::Vector3d acc_doubleintegral = Eigen::Vector3d::Zero();
 
   // cross matrix accumulatrion
@@ -318,8 +315,8 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
 
   // sub-Jacobians
   Eigen::Matrix3d dalpha_db_g = Eigen::Matrix3d::Zero();
-  Eigen::Matrix3d dv_db_g = Eigen::Matrix3d::Zero();
-  Eigen::Matrix3d dp_db_g = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d     dv_db_g = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d     dp_db_g = Eigen::Matrix3d::Zero();
 
   // the Jacobian of the increment (w/o biases)
   Eigen::Matrix<double,15,15> P_delta = Eigen::Matrix<double,15,15>::Zero();
@@ -327,13 +324,12 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
   double Delta_t = 0;
   bool hasStarted = false;
   int i = 0;
-  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements.begin();
-        it != imuMeasurements.end(); ++it) {
+  for (okvis::ImuMeasurementDeque::const_iterator it = imuMeasurements.begin(); it != imuMeasurements.end(); ++it) {
 
     Eigen::Vector3d omega_S_0 = it->measurement.gyroscopes;
-    Eigen::Vector3d acc_S_0 = it->measurement.accelerometers;
+    Eigen::Vector3d acc_S_0   = it->measurement.accelerometers;
     Eigen::Vector3d omega_S_1 = (it + 1)->measurement.gyroscopes;
-    Eigen::Vector3d acc_S_1 = (it + 1)->measurement.accelerometers;
+    Eigen::Vector3d acc_S_1   = (it + 1)->measurement.accelerometers;
 
     // time delta
     okvis::Time nexttime;
@@ -350,7 +346,7 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
       dt = (nexttime - time).toSec();
       const double r = dt / interval;
       omega_S_1 = ((1.0 - r) * omega_S_0 + r * omega_S_1).eval();
-      acc_S_1 = ((1.0 - r) * acc_S_0 + r * acc_S_1).eval();
+      acc_S_1   = ((1.0 - r) * acc_S_0   + r * acc_S_1).eval();
     }
 
     if (dt <= 0.0) {
@@ -362,7 +358,7 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
       hasStarted = true;
       const double r = dt / (nexttime - it->timeStamp).toSec();
       omega_S_0 = (r * omega_S_0 + (1.0 - r) * omega_S_1).eval();
-      acc_S_0 = (r * acc_S_0 + (1.0 - r) * acc_S_1).eval();
+      acc_S_0   = (r * acc_S_0   + (1.0 - r) * acc_S_1).eval();
     }
 
     // ensure integrity
@@ -379,7 +375,8 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
       LOG(WARNING) << "gyr saturation";
     }
 
-    if (fabs(acc_S_0[0]) > imuParams.a_max || fabs(acc_S_0[1]) > imuParams.a_max
+    if (fabs(acc_S_0[0]) > imuParams.a_max
+        || fabs(acc_S_0[1]) > imuParams.a_max
         || fabs(acc_S_0[2]) > imuParams.a_max
         || fabs(acc_S_1[0]) > imuParams.a_max
         || fabs(acc_S_1[1]) > imuParams.a_max
@@ -389,29 +386,35 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
     }
 
     // actual propagation
+
     // orientation:
-    Eigen::Quaterniond dq;
     const Eigen::Vector3d omega_S_true = (0.5*(omega_S_0+omega_S_1) - speedAndBiases.segment<3>(3));
-    const double theta_half = omega_S_true.norm() * 0.5 * dt;
+    const double      theta_half = omega_S_true.norm() * 0.5 * dt;
     const double sinc_theta_half = ode::sinc(theta_half);
-    const double cos_theta_half = cos(theta_half);
+    const double  cos_theta_half =       cos(theta_half);
+
+    Eigen::Quaterniond dq;
     dq.vec() = sinc_theta_half * omega_S_true * 0.5 * dt;
-    dq.w() = cos_theta_half;
+    dq.w()   =  cos_theta_half;
+
     Eigen::Quaterniond Delta_q_1 = Delta_q * dq;
+
     // rotation matrix integral:
-    const Eigen::Matrix3d C = Delta_q.toRotationMatrix();
+    const Eigen::Matrix3d C   = Delta_q.toRotationMatrix();
     const Eigen::Matrix3d C_1 = Delta_q_1.toRotationMatrix();
-    const Eigen::Vector3d acc_S_true = (0.5*(acc_S_0+acc_S_1) - speedAndBiases.segment<3>(6));
-    const Eigen::Matrix3d C_integral_1 = C_integral + 0.5*(C + C_1)*dt;
+
+    const Eigen::Vector3d acc_S_true     = (0.5*(acc_S_0+acc_S_1) - speedAndBiases.segment<3>(6));
+
+    const Eigen::Matrix3d   C_integral_1 =   C_integral + 0.5*(C + C_1)*dt;
     const Eigen::Vector3d acc_integral_1 = acc_integral + 0.5*(C + C_1)*acc_S_true*dt;
+
     // rotation matrix double integral:
-    C_doubleintegral += C_integral*dt + 0.25*(C + C_1)*dt*dt;
+      C_doubleintegral +=   C_integral*dt + 0.25*(C + C_1)*dt*dt;
     acc_doubleintegral += acc_integral*dt + 0.25*(C + C_1)*acc_S_true*dt*dt;
 
     // Jacobian parts
     dalpha_db_g += dt*C_1;
-    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix()*cross +
-        okvis::kinematics::rightJacobian(omega_S_true*dt)*dt;
+    const Eigen::Matrix3d cross_1 = dq.inverse().toRotationMatrix()*cross + okvis::kinematics::rightJacobian(omega_S_true*dt)*dt;
     const Eigen::Matrix3d acc_S_x = okvis::kinematics::crossMx(acc_S_true);
     Eigen::Matrix3d dv_db_g_1 = dv_db_g + 0.5*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
     dp_db_g += dt*dv_db_g + 0.25*dt*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
@@ -420,13 +423,13 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
     if (covariance) {
       Eigen::Matrix<double,15,15> F_delta = Eigen::Matrix<double,15,15>::Identity();
       // transform
-      F_delta.block<3,3>(0,3) = -okvis::kinematics::crossMx(acc_integral*dt + 0.25*(C + C_1)*acc_S_true*dt*dt);
-      F_delta.block<3,3>(0,6) = Eigen::Matrix3d::Identity()*dt;
-      F_delta.block<3,3>(0,9) = dt*dv_db_g + 0.25*dt*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
+      F_delta.block<3,3>(0,3)  = -okvis::kinematics::crossMx(acc_integral*dt + 0.25*(C + C_1)*acc_S_true*dt*dt);
+      F_delta.block<3,3>(0,6)  =  Eigen::Matrix3d::Identity()*dt;
+      F_delta.block<3,3>(0,9)  =  dt*dv_db_g + 0.25*dt*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
       F_delta.block<3,3>(0,12) = -C_integral*dt + 0.25*(C + C_1)*dt*dt;
-      F_delta.block<3,3>(3,9) = -dt*C_1;
-      F_delta.block<3,3>(6,3) = -okvis::kinematics::crossMx(0.5*(C + C_1)*acc_S_true*dt);
-      F_delta.block<3,3>(6,9) = 0.5*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
+      F_delta.block<3,3>(3,9)  = -dt*C_1;
+      F_delta.block<3,3>(6,3)  = -okvis::kinematics::crossMx(0.5*(C + C_1)*acc_S_true*dt);
+      F_delta.block<3,3>(6,9)  =  0.5*dt*(C*acc_S_x*cross + C_1*acc_S_x*cross_1);
       F_delta.block<3,3>(6,12) = -0.5*(C + C_1)*dt;
       P_delta = F_delta*P_delta*F_delta.transpose();
       // add noise. Note that transformations with rotation matrices can be ignored, since the noise is isotropic.
@@ -454,8 +457,8 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
     }
 
     // memory shift
-    Delta_q = Delta_q_1;
-    C_integral = C_integral_1;
+    Delta_q      = Delta_q_1;
+    C_integral   = C_integral_1;
     acc_integral = acc_integral_1;
     cross = cross_1;
     dv_db_g = dv_db_g_1;
@@ -465,7 +468,6 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
 
     if (nexttime == t_end)
       break;
-
   }
 
   // actual propagation output:
@@ -480,13 +482,13 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
   if (jacobian) {
     Eigen::Matrix<double,15,15> & F = *jacobian;
     F.setIdentity(); // holds for all states, including d/dalpha, d/db_g, d/db_a
-    F.block<3,3>(0,3) = -okvis::kinematics::crossMx(C_WS_0*acc_doubleintegral);
-    F.block<3,3>(0,6) = Eigen::Matrix3d::Identity()*Delta_t;
-    F.block<3,3>(0,9) = C_WS_0*dp_db_g;
+    F.block<3,3>(0,3)  = -okvis::kinematics::crossMx(C_WS_0*acc_doubleintegral);
+    F.block<3,3>(0,6)  =  Eigen::Matrix3d::Identity()*Delta_t;
+    F.block<3,3>(0,9)  =  C_WS_0*dp_db_g;
     F.block<3,3>(0,12) = -C_WS_0*C_doubleintegral;
-    F.block<3,3>(3,9) = -C_WS_0*dalpha_db_g;
-    F.block<3,3>(6,3) = -okvis::kinematics::crossMx(C_WS_0*acc_integral);
-    F.block<3,3>(6,9) = C_WS_0*dv_db_g;
+    F.block<3,3>(3,9)  = -C_WS_0*dalpha_db_g;
+    F.block<3,3>(6,3)  = -okvis::kinematics::crossMx(C_WS_0*acc_integral);
+    F.block<3,3>(6,9)  =  C_WS_0*dv_db_g;
     F.block<3,3>(6,12) = -C_WS_0*C_integral;
   }
 
@@ -496,16 +498,15 @@ int ImuError::propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
     // transform from local increments to actual states
     Eigen::Matrix<double,15,15> T = Eigen::Matrix<double,15,15>::Identity();
     T.topLeftCorner<3,3>() = C_WS_0;
-    T.block<3,3>(3,3) = C_WS_0;
-    T.block<3,3>(6,6) = C_WS_0;
+    T.block<3,3>(3,3)      = C_WS_0;
+    T.block<3,3>(6,6)      = C_WS_0;
     P = T * P_delta * T.transpose();
   }
   return i;
 }
 
 // This evaluates the error term and additionally computes the Jacobians.
-bool ImuError::Evaluate(double const* const * parameters, double* residuals,
-                        double** jacobians) const {
+bool ImuError::Evaluate(double const* const * parameters, double* residuals, double** jacobians) const {
   return EvaluateWithMinimalJacobians(parameters, residuals, jacobians, NULL);
 }
 
@@ -543,8 +544,7 @@ bool ImuError::EvaluateWithMinimalJacobians(double const* const * parameters,
   // ensure unique access
   {
     std::lock_guard<std::mutex> lock(preintegrationMutex_);
-    Delta_b = speedAndBiases_0.tail<6>()
-          - speedAndBiases_ref_.tail<6>();
+    Delta_b = speedAndBiases_0.tail<6>() - speedAndBiases_ref_.tail<6>();
   }
   redo_ = redo_ || (Delta_b.head<3>().norm() * Delta_t > 0.0001);
   if (redo_) {
@@ -563,39 +563,37 @@ bool ImuError::EvaluateWithMinimalJacobians(double const* const * parameters,
     const Eigen::Vector3d g_W = imuParameters_.g * Eigen::Vector3d(0, 0, 6371009).normalized();
 
     // assign Jacobian w.r.t. x0
-    Eigen::Matrix<double,15,15> F0 =
-        Eigen::Matrix<double,15,15>::Identity(); // holds for d/db_g, d/db_a
+    Eigen::Matrix<double,15,15> F0 = Eigen::Matrix<double,15,15>::Identity(); // holds for d/db_g, d/db_a
+
     const Eigen::Vector3d delta_p_est_W =
         T_WS_0.r() - T_WS_1.r() + speedAndBiases_0.head<3>()*Delta_t - 0.5*g_W*Delta_t*Delta_t;
+
     const Eigen::Vector3d delta_v_est_W =
         speedAndBiases_0.head<3>() - speedAndBiases_1.head<3>() - g_W*Delta_t;
+
     const Eigen::Quaterniond Dq = okvis::kinematics::deltaQ(-dalpha_db_g_*Delta_b.head<3>())*Delta_q_;
-    F0.block<3,3>(0,0) = C_S0_W;
-    F0.block<3,3>(0,3) = C_S0_W * okvis::kinematics::crossMx(delta_p_est_W);
-    F0.block<3,3>(0,6) = C_S0_W * Eigen::Matrix3d::Identity()*Delta_t;
-    F0.block<3,3>(0,9) = dp_db_g_;
+
+    F0.block<3,3>(0,0)  =  C_S0_W;
+    F0.block<3,3>(0,3)  =  C_S0_W * okvis::kinematics::crossMx(delta_p_est_W);
+    F0.block<3,3>(0,6)  =  C_S0_W * Eigen::Matrix3d::Identity()*Delta_t;
+    F0.block<3,3>(0,9)  =  dp_db_g_;
     F0.block<3,3>(0,12) = -C_doubleintegral_;
-    F0.block<3,3>(3,3) = (okvis::kinematics::plus(Dq*T_WS_1.q().inverse()) *
-        okvis::kinematics::oplus(T_WS_0.q())).topLeftCorner<3,3>();
-    F0.block<3,3>(3,9) = (okvis::kinematics::oplus(T_WS_1.q().inverse()*T_WS_0.q())*
-        okvis::kinematics::oplus(Dq)).topLeftCorner<3,3>()*(-dalpha_db_g_);
-    F0.block<3,3>(6,3) = C_S0_W * okvis::kinematics::crossMx(delta_v_est_W);
-    F0.block<3,3>(6,6) = C_S0_W;
-    F0.block<3,3>(6,9) = dv_db_g_;
+    F0.block<3,3>(3,3)  =  (okvis::kinematics::plus(Dq*T_WS_1.q().inverse()) * okvis::kinematics::oplus(T_WS_0.q())).topLeftCorner<3,3>();
+    F0.block<3,3>(3,9)  =  (okvis::kinematics::oplus(T_WS_1.q().inverse()*T_WS_0.q())* okvis::kinematics::oplus(Dq)).topLeftCorner<3,3>()*(-dalpha_db_g_);
+    F0.block<3,3>(6,3)  =  C_S0_W * okvis::kinematics::crossMx(delta_v_est_W);
+    F0.block<3,3>(6,6)  =  C_S0_W;
+    F0.block<3,3>(6,9)  =  dv_db_g_;
     F0.block<3,3>(6,12) = -C_integral_;
 
     // assign Jacobian w.r.t. x1
-    Eigen::Matrix<double,15,15> F1 =
-        -Eigen::Matrix<double,15,15>::Identity(); // holds for the biases
+    Eigen::Matrix<double,15,15> F1 = -Eigen::Matrix<double,15,15>::Identity(); // holds for the biases
     F1.block<3,3>(0,0) = -C_S0_W;
-    F1.block<3,3>(3,3) = -(okvis::kinematics::plus(Dq) *
-        okvis::kinematics::oplus(T_WS_0.q()) *
-        okvis::kinematics::plus(T_WS_1.q().inverse())).topLeftCorner<3,3>();
+    F1.block<3,3>(3,3) = -(okvis::kinematics::plus(Dq) * okvis::kinematics::oplus(T_WS_0.q()) * okvis::kinematics::plus(T_WS_1.q().inverse())).topLeftCorner<3,3>();
     F1.block<3,3>(6,6) = -C_S0_W;
 
     // the overall error vector
     Eigen::Matrix<double, 15, 1> error;
-    error.segment<3>(0) =  C_S0_W * delta_p_est_W + acc_doubleintegral_ + F0.block<3,6>(0,9)*Delta_b;
+    error.segment<3>(0) = C_S0_W * delta_p_est_W + acc_doubleintegral_ + F0.block<3,6>(0,9)*Delta_b;
     error.segment<3>(3) = 2*(Dq*(T_WS_1.q().inverse()*T_WS_0.q())).vec(); //2*T_WS_0.q()*Dq*T_WS_1.q().inverse();//
     error.segment<3>(6) = C_S0_W * delta_v_est_W + acc_integral_ + F0.block<3,6>(6,9)*Delta_b;
     error.tail<6>() = speedAndBiases_0.tail<6>() - speedAndBiases_1.tail<6>();
@@ -608,60 +606,52 @@ bool ImuError::EvaluateWithMinimalJacobians(double const* const * parameters,
     if (jacobians != NULL) {
       if (jacobians[0] != NULL) {
         // Jacobian w.r.t. minimal perturbance
-        Eigen::Matrix<double, 15, 6> J0_minimal = squareRootInformation_
-            * F0.block<15, 6>(0, 0);
+        Eigen::Matrix<double, 15, 6> J0_minimal = squareRootInformation_ * F0.block<15, 6>(0, 0);
 
         // pseudo inverse of the local parametrization Jacobian:
         Eigen::Matrix<double, 6, 7, Eigen::RowMajor> J_lift;
         PoseLocalParameterization::liftJacobian(parameters[0], J_lift.data());
 
         // hallucinate Jacobian w.r.t. state
-        Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor> > J0(
-            jacobians[0]);
+        Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor> > J0(jacobians[0]);
         J0 = J0_minimal * J_lift;
 
         // if requested, provide minimal Jacobians
         if (jacobiansMinimal != NULL) {
           if (jacobiansMinimal[0] != NULL) {
-            Eigen::Map<Eigen::Matrix<double, 15, 6, Eigen::RowMajor> > J0_minimal_mapped(
-                jacobiansMinimal[0]);
+            Eigen::Map<Eigen::Matrix<double, 15, 6, Eigen::RowMajor> > J0_minimal_mapped(jacobiansMinimal[0]);
             J0_minimal_mapped = J0_minimal;
           }
         }
       }
       if (jacobians[1] != NULL) {
-        Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J1(
-            jacobians[1]);
+        Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J1(jacobians[1]);
         J1 = squareRootInformation_ * F0.block<15, 9>(0, 6);
 
         // if requested, provide minimal Jacobians
         if (jacobiansMinimal != NULL) {
           if (jacobiansMinimal[1] != NULL) {
-            Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J1_minimal_mapped(
-                jacobiansMinimal[1]);
+            Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J1_minimal_mapped(jacobiansMinimal[1]);
             J1_minimal_mapped = J1;
           }
         }
       }
       if (jacobians[2] != NULL) {
         // Jacobian w.r.t. minimal perturbance
-        Eigen::Matrix<double, 15, 6> J2_minimal = squareRootInformation_
-                    * F1.block<15, 6>(0, 0);
+        Eigen::Matrix<double, 15, 6> J2_minimal = squareRootInformation_ * F1.block<15, 6>(0, 0);
 
         // pseudo inverse of the local parametrization Jacobian:
         Eigen::Matrix<double, 6, 7, Eigen::RowMajor> J_lift;
         PoseLocalParameterization::liftJacobian(parameters[2], J_lift.data());
 
         // hallucinate Jacobian w.r.t. state
-        Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor> > J2(
-            jacobians[2]);
+        Eigen::Map<Eigen::Matrix<double, 15, 7, Eigen::RowMajor> > J2(jacobians[2]);
         J2 = J2_minimal * J_lift;
 
         // if requested, provide minimal Jacobians
         if (jacobiansMinimal != NULL) {
           if (jacobiansMinimal[2] != NULL) {
-            Eigen::Map<Eigen::Matrix<double, 15, 6, Eigen::RowMajor> > J2_minimal_mapped(
-                jacobiansMinimal[2]);
+            Eigen::Map<Eigen::Matrix<double, 15, 6, Eigen::RowMajor> > J2_minimal_mapped(jacobiansMinimal[2]);
             J2_minimal_mapped = J2_minimal;
           }
         }
@@ -673,8 +663,7 @@ bool ImuError::EvaluateWithMinimalJacobians(double const* const * parameters,
         // if requested, provide minimal Jacobians
         if (jacobiansMinimal != NULL) {
           if (jacobiansMinimal[3] != NULL) {
-            Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J3_minimal_mapped(
-                jacobiansMinimal[3]);
+            Eigen::Map<Eigen::Matrix<double, 15, 9, Eigen::RowMajor> > J3_minimal_mapped(jacobiansMinimal[3]);
             J3_minimal_mapped = J3;
           }
         }

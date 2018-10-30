@@ -120,6 +120,7 @@ bool Frontend::dataAssociationAndInitialization(
     const std::shared_ptr<okvis::MapPointVector> /*map*/, // TODO sleutenegger: why is this not used here?
     std::shared_ptr<okvis::MultiFrame> framesInOut,
     bool *asKeyframe) {
+
   // match new keypoints to existing landmarks/keypoints
   // initialise new landmarks (states)
   // outlier rejection by consistency check
@@ -128,13 +129,12 @@ bool Frontend::dataAssociationAndInitialization(
   // left-right stereo match & init
 
   // find distortion type
-  okvis::cameras::NCameraSystem::DistortionType distortionType = params.nCameraSystem
-      .distortionType(0);
+  okvis::cameras::NCameraSystem::DistortionType distortionType = params.nCameraSystem.distortionType(0);
   for (size_t i = 1; i < params.nCameraSystem.numCameras(); ++i) {
-    OKVIS_ASSERT_TRUE(Exception,
-                      distortionType == params.nCameraSystem.distortionType(i),
+    OKVIS_ASSERT_TRUE(Exception, distortionType == params.nCameraSystem.distortionType(i),
                       "mixed frame types are not supported yet");
   }
+
   int num3dMatches = 0;
 
   // first frame? (did do addStates before, so 1 frame minimum in estimator)
@@ -153,8 +153,7 @@ bool Frontend::dataAssociationAndInitialization(
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
                     okvis::cameras::RadialTangentialDistortion> > >(
-            estimator, params, framesInOut->id(), rotationOnly, false,
-            &uncertainMatchFraction);
+            estimator, params, framesInOut->id(), rotationOnly, false, &uncertainMatchFraction);
         break;
       }
       case okvis::cameras::NCameraSystem::Equidistant: {
@@ -162,8 +161,7 @@ bool Frontend::dataAssociationAndInitialization(
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
                     okvis::cameras::EquidistantDistortion> > >(
-            estimator, params, framesInOut->id(), rotationOnly, false,
-            &uncertainMatchFraction);
+            estimator, params, framesInOut->id(), rotationOnly, false, &uncertainMatchFraction);
         break;
       }
       case okvis::cameras::NCameraSystem::RadialTangential8: {
@@ -171,8 +169,7 @@ bool Frontend::dataAssociationAndInitialization(
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
                     okvis::cameras::RadialTangentialDistortion8> > >(
-            estimator, params, framesInOut->id(), rotationOnly, false,
-            &uncertainMatchFraction);
+            estimator, params, framesInOut->id(), rotationOnly, false, &uncertainMatchFraction);
         break;
       }
       default:
@@ -201,28 +198,21 @@ bool Frontend::dataAssociationAndInitialization(
         matchToLastFrame<
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
-                    okvis::cameras::RadialTangentialDistortion> > >(
-            estimator, params, framesInOut->id(),
-            false);
+                    okvis::cameras::RadialTangentialDistortion> > >(estimator, params, framesInOut->id(), false);
         break;
       }
       case okvis::cameras::NCameraSystem::Equidistant: {
         matchToLastFrame<
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
-                    okvis::cameras::EquidistantDistortion> > >(
-            estimator, params, framesInOut->id(),
-            false);
+                    okvis::cameras::EquidistantDistortion> > >(estimator, params, framesInOut->id(), false);
         break;
       }
       case okvis::cameras::NCameraSystem::RadialTangential8: {
         matchToLastFrame<
             VioKeyframeWindowMatchingAlgorithm<
                 okvis::cameras::PinholeCamera<
-                    okvis::cameras::RadialTangentialDistortion8> > >(
-            estimator, params, framesInOut->id(),
-            false);
-
+                    okvis::cameras::RadialTangentialDistortion8> > >(estimator, params, framesInOut->id(), false);
         break;
       }
       default:
@@ -240,24 +230,21 @@ bool Frontend::dataAssociationAndInitialization(
       matchStereo<
           VioKeyframeWindowMatchingAlgorithm<
               okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion> > >(estimator,
-                                                                  framesInOut);
+                  okvis::cameras::RadialTangentialDistortion> > >(estimator, framesInOut);
       break;
     }
     case okvis::cameras::NCameraSystem::Equidistant: {
       matchStereo<
           VioKeyframeWindowMatchingAlgorithm<
               okvis::cameras::PinholeCamera<
-                  okvis::cameras::EquidistantDistortion> > >(estimator,
-                                                             framesInOut);
+                  okvis::cameras::EquidistantDistortion> > >(estimator, framesInOut);
       break;
     }
     case okvis::cameras::NCameraSystem::RadialTangential8: {
       matchStereo<
           VioKeyframeWindowMatchingAlgorithm<
               okvis::cameras::PinholeCamera<
-                  okvis::cameras::RadialTangentialDistortion8> > >(estimator,
-                                                                   framesInOut);
+                  okvis::cameras::RadialTangentialDistortion8> > >(estimator, framesInOut);
       break;
     }
     default:
@@ -360,8 +347,7 @@ bool Frontend::doWeNeedANewKeyframe(
   }
 
   // take a decision
-  if (overlap > keyframeInsertionOverlapThreshold_
-      && ratio > keyframeInsertionMatchingRatioThreshold_)
+  if (overlap > keyframeInsertionOverlapThreshold_ && ratio > keyframeInsertionMatchingRatioThreshold_)
     return false;
   else
     return true;
@@ -387,20 +373,27 @@ int Frontend::matchToKeyframes(okvis::Estimator& estimator,
 
   // go through all the frames and try to match the initialized keypoints
   size_t kfcounter = 0;
+
   for (size_t age = 1; age < estimator.numFrames(); ++age) {
+
     uint64_t olderFrameId = estimator.frameIdByAge(age);
     if (!estimator.isKeyframe(olderFrameId))
       continue;
+
     for (size_t im = 0; im < params.nCameraSystem.numCameras(); ++im) {
+
       MATCHING_ALGORITHM matchingAlgorithm(estimator,
                                            MATCHING_ALGORITHM::Match3D2D,
                                            briskMatchingThreshold_,
                                            usePoseUncertainty);
+
       matchingAlgorithm.setFrames(olderFrameId, currentFrameId, im, im);
 
       // match 3D-2D
       matcher_->match<MATCHING_ALGORITHM>(matchingAlgorithm);
+
       retCtr += matchingAlgorithm.numMatches();
+
       numUncertainMatches += matchingAlgorithm.numUncertainMatches();
 
     }
@@ -411,34 +404,39 @@ int Frontend::matchToKeyframes(okvis::Estimator& estimator,
 
   kfcounter = 0;
   bool firstFrame = true;
+
   for (size_t age = 1; age < estimator.numFrames(); ++age) {
+
     uint64_t olderFrameId = estimator.frameIdByAge(age);
     if (!estimator.isKeyframe(olderFrameId))
       continue;
+
     for (size_t im = 0; im < params.nCameraSystem.numCameras(); ++im) {
+
       MATCHING_ALGORITHM matchingAlgorithm(estimator,
                                            MATCHING_ALGORITHM::Match2D2D,
                                            briskMatchingThreshold_,
                                            usePoseUncertainty);
+
       matchingAlgorithm.setFrames(olderFrameId, currentFrameId, im, im);
 
       // match 2D-2D for initialization of new (mono-)correspondences
       matcher_->match<MATCHING_ALGORITHM>(matchingAlgorithm);
+
       retCtr += matchingAlgorithm.numMatches();
+
       numUncertainMatches += matchingAlgorithm.numUncertainMatches();
     }
 
     // remove outliers
     // only do RANSAC 3D2D with most recent KF
     if (kfcounter == 0 && isInitialized_)
-      runRansac3d2d(estimator, params.nCameraSystem,
-                    estimator.multiFrame(currentFrameId), removeOutliers);
+      runRansac3d2d(estimator, params.nCameraSystem, estimator.multiFrame(currentFrameId), removeOutliers);
 
     bool rotationOnly_tmp = false;
     // do RANSAC 2D2D for initialization only
     if (!isInitialized_) {
-      runRansac2d2d(estimator, params, currentFrameId, olderFrameId, true,
-                    removeOutliers, rotationOnly_tmp);
+      runRansac2d2d(estimator, params, currentFrameId, olderFrameId, true, removeOutliers, rotationOnly_tmp);
     }
     if (firstFrame) {
       rotationOnly = rotationOnly_tmp;

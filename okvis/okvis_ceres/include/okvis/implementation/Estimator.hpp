@@ -45,13 +45,11 @@ template<class GEOMETRY_TYPE>
                                                    uint64_t poseId,
                                                    size_t camIdx,
                                                    size_t keypointIdx) {
-  OKVIS_ASSERT_TRUE_DBG(Exception, isLandmarkAdded(landmarkId),
-                        "landmark not added");
+  OKVIS_ASSERT_TRUE_DBG(Exception, isLandmarkAdded(landmarkId), "landmark not added");
 
   // avoid double observations
   okvis::KeypointIdentifier kid(poseId, camIdx, keypointIdx);
-  if (landmarksMap_.at(landmarkId).observations.find(kid)
-      != landmarksMap_.at(landmarkId).observations.end()) {
+  if (landmarksMap_.at(landmarkId).observations.find(kid) != landmarksMap_.at(landmarkId).observations.end()) {
     return NULL;
   }
 
@@ -65,9 +63,7 @@ template<class GEOMETRY_TYPE>
   information *= 64.0 / (size * size);
 
   // create error term
-  std::shared_ptr < ceres::ReprojectionError
-      < GEOMETRY_TYPE
-          >> reprojectionError(
+  std::shared_ptr <ceres::ReprojectionError<GEOMETRY_TYPE>> reprojectionError(
               new ceres::ReprojectionError<GEOMETRY_TYPE>(
                   multiFramePtr->template geometryAs<GEOMETRY_TYPE>(camIdx),
                   camIdx, measurement, information));
@@ -78,13 +74,11 @@ template<class GEOMETRY_TYPE>
       mapPtr_->parameterBlockPtr(poseId),
       mapPtr_->parameterBlockPtr(landmarkId),
       mapPtr_->parameterBlockPtr(
-          statesMap_.at(poseId).sensors.at(SensorStates::Camera).at(camIdx).at(
-              CameraSensorStates::T_SCi).id));
+          statesMap_.at(poseId).sensors.at(SensorStates::Camera).at(camIdx).at(CameraSensorStates::T_SCi).id));
 
   // remember
   landmarksMap_.at(landmarkId).observations.insert(
-      std::pair<okvis::KeypointIdentifier, uint64_t>(
-          kid, reinterpret_cast<uint64_t>(retVal)));
+      std::pair<okvis::KeypointIdentifier, uint64_t>(kid, reinterpret_cast<uint64_t>(retVal)));
 
   return retVal;
 }

@@ -396,9 +396,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     } else {
       // get old T_WS
       propagationTimer.start();
-      okvis::ceres::ImuError::propagation(imuData, parameters_.imu, T_WS,
-                                          speedAndBiases, lastTimestamp,
-                                          multiFrame->timestamp());
+      okvis::ceres::ImuError::propagation(imuData, parameters_.imu, T_WS, speedAndBiases, lastTimestamp, multiFrame->timestamp());
       propagationTimer.stop();
     }
 
@@ -439,6 +437,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
 
 // Loop that matches frames with existing frames.
 void ThreadedKFVio::matchingLoop() {
+
   TimerSwitchable prepareToAddStateTimer("2.1 prepareToAddState",true);
   TimerSwitchable waitForOptimizationTimer("2.2 waitForOptimization",true);
   TimerSwitchable addStateTimer("2.3 addState",true);
@@ -449,28 +448,27 @@ void ThreadedKFVio::matchingLoop() {
     std::shared_ptr<okvis::MultiFrame> frame;
 
     // get data and check for termination request
-    if (keypointMeasurements_.PopBlocking(&frame) == false)
+    if (!keypointMeasurements_.PopBlocking(&frame))
       return;
 
     prepareToAddStateTimer.start();
 
     // -- get relevant imu messages for new state
-    okvis::Time imuDataEndTime = frame->timestamp() + temporal_imu_data_overlap;
-    okvis::Time imuDataBeginTime = lastAddedStateTimestamp_
-        - temporal_imu_data_overlap;
+    okvis::Time imuDataEndTime   = frame->timestamp() + temporal_imu_data_overlap;
+    okvis::Time imuDataBeginTime = lastAddedStateTimestamp_ - temporal_imu_data_overlap;
 
-    OKVIS_ASSERT_TRUE_DBG(Exception,
-                          imuDataBeginTime < imuDataEndTime,
+    OKVIS_ASSERT_TRUE_DBG(Exception, imuDataBeginTime < imuDataEndTime,
                           "imu data end time is smaller than begin time." <<
         "current frametimestamp " << frame->timestamp() << " (id: " << frame->id() <<
         "last timestamp         " << lastAddedStateTimestamp_ << " (id: " << estimator_.currentFrameId());
 
     // wait until all relevant imu messages have arrived and check for termination request
-    if (imuFrameSynchronizer_.waitForUpToDateImuData(
-        okvis::Time(imuDataEndTime)) == false)
-      return; OKVIS_ASSERT_TRUE_DBG(Exception,
-        imuDataEndTime < imuMeasurements_.back().timeStamp,
-        "Waiting for up to date imu data seems to have failed!");
+    if (!imuFrameSynchronizer_.waitForUpToDateImuData(okvis::Time(imuDataEndTime)))
+      return;
+
+    OKVIS_ASSERT_TRUE_DBG(Exception,
+                          imuDataEndTime < imuMeasurements_.back().timeStamp,
+                          "Waiting for up to date imu data seems to have failed!");
 
     okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
 
@@ -512,15 +510,14 @@ void ThreadedKFVio::matchingLoop() {
       if (asKeyframe)
         estimator_.setKeyframe(frame->id(), asKeyframe);
       if(!blocking_) {
-        double timeLimit = parameters_.optimization.timeLimitForMatchingAndOptimization
-                           -(okvis::Time::now()-t0Matching).toSec();
+        double timeLimit = parameters_.optimization.timeLimitForMatchingAndOptimization - (okvis::Time::now()-t0Matching).toSec();
         estimator_.setOptimizationTimeLimit(std::max<double>(0.0, timeLimit), parameters_.optimization.min_iterations);
       }
       optimizationDone_ = false;
     }  // unlock estimator_mutex_
 
     // use queue size 1 to propagate a congestion to the _matchedFrames queue
-    if (matchedFrames_.PushBlockingIfFull(frame, 1) == false)
+    if (!matchedFrames_.PushBlockingIfFull(frame, 1))
       return;
   }
 }

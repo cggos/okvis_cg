@@ -378,9 +378,8 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     // potential 2d2d match - verify by triangulation
     Eigen::Vector4d hP_Ca;
     bool canBeInitialized;
-    bool valid = probabilisticStereoTriangulator_.stereoTriangulate(
-        indexA, indexB, hP_Ca, canBeInitialized,
-        std::max(raySigmasA_[indexA], raySigmasB_[indexB]));
+    bool valid = probabilisticStereoTriangulator_.stereoTriangulate(indexA, indexB, hP_Ca, canBeInitialized,
+                                                                    std::max(raySigmasA_[indexA], raySigmasB_[indexB]));
     if (!valid) {
       return;
     }
@@ -388,9 +387,7 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     // get the uncertainty
     if (canBeInitialized) {  // know more exactly
       Eigen::Matrix3d pointUOplus_A;
-      probabilisticStereoTriangulator_.getUncertainty(indexA, indexB, hP_Ca,
-                                                      pointUOplus_A,
-                                                      canBeInitialized);
+      probabilisticStereoTriangulator_.getUncertainty(indexA, indexB, hP_Ca, pointUOplus_A, canBeInitialized);
     }
 
     // check and adapt landmark status
@@ -428,11 +425,9 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     // add landmark to graph if necessary
     if (insertHomogeneousPointParameterBlock) {
       estimator_->addLandmark(lmId, T_WCa_ * hP_Ca);
-      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId),
-                        lmId<<" not added, bug");
+      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId), lmId<<" not added, bug");
       estimator_->setLandmarkInitialized(lmId, canBeInitialized);
     } else {
-
       // update initialization status, set better estimate, if possible
       if (canBeInitialized) {
         estimator_->setLandmarkInitialized(lmId, true);
@@ -443,8 +438,7 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     // in image A
     okvis::MapPoint landmark;
     if (insertA
-        && landmark.observations.find(
-            okvis::KeypointIdentifier(mfIdA_, camIdA_, indexA))
+        && landmark.observations.find(okvis::KeypointIdentifier(mfIdA_, camIdA_, indexA))
             == landmark.observations.end()) {  // ensure no double observations...
             // TODO hp_Sa NOT USED!
       Eigen::Vector4d hp_Sa(T_SaCa_ * hP_Ca);
@@ -452,26 +446,21 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
       frameA_->setLandmarkId(camIdA_, indexA, lmId);
       lmIdA = lmId;
       // initialize in graph
-      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId),
-                        "landmark id=" << lmId<<" not added");
-      estimator_->addObservation<camera_geometry_t>(lmId, mfIdA_, camIdA_,
-                                                    indexA);
+      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId), "landmark id=" << lmId<<" not added");
+      estimator_->addObservation<camera_geometry_t>(lmId, mfIdA_, camIdA_, indexA);
     }
 
     // in image B
     if (insertB
-        && landmark.observations.find(
-            okvis::KeypointIdentifier(mfIdB_, camIdB_, indexB))
+        && landmark.observations.find(okvis::KeypointIdentifier(mfIdB_, camIdB_, indexB))
             == landmark.observations.end()) {  // ensure no double observations...
       Eigen::Vector4d hp_Sb(T_SbCb_ * T_CbCa_ * hP_Ca);
       hp_Sb.normalize();
       frameB_->setLandmarkId(camIdB_, indexB, lmId);
       lmIdB = lmId;
       // initialize in graph
-      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId),
-                        "landmark " << lmId << " not added");
-      estimator_->addObservation<camera_geometry_t>(lmId, mfIdB_, camIdB_,
-                                                    indexB);
+      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmId), "landmark " << lmId << " not added");
+      estimator_->addObservation<camera_geometry_t>(lmId, mfIdB_, camIdB_, indexB);
     }
 
     // let's check for consistency with other observations:
@@ -491,9 +480,8 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     double keypointBStdDev;
     frameB_->getKeypointSize(camIdB_, indexB, keypointBStdDev);
     keypointBStdDev = 0.8 * keypointBStdDev / 12.0;
-    Eigen::Matrix2d U_tot = Eigen::Matrix2d::Identity() * keypointBStdDev
-        * keypointBStdDev
-        + projectionsIntoBUncertainties_.block<2, 2>(2 * indexA, 0);
+    Eigen::Matrix2d U_tot = Eigen::Matrix2d::Identity() * keypointBStdDev * keypointBStdDev
+                            + projectionsIntoBUncertainties_.block<2, 2>(2 * indexA, 0);
 
     const double chi2 = err.transpose().eval() * U_tot.inverse() * err;
 
@@ -513,13 +501,10 @@ void VioKeyframeWindowMatchingAlgorithm<CAMERA_GEOMETRY_T>::setBestMatch(
     estimator_->getLandmark(lmIdA, landmark);
 
     // initialize in graph
-    if (landmark.observations.find(
-        okvis::KeypointIdentifier(mfIdB_, camIdB_, indexB))
+    if (landmark.observations.find(okvis::KeypointIdentifier(mfIdB_, camIdB_, indexB))
         == landmark.observations.end()) {  // ensure no double observations...
-      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmIdB),
-                        "not added");
-      estimator_->addObservation<camera_geometry_t>(lmIdB, mfIdB_, camIdB_,
-                                                    indexB);
+      OKVIS_ASSERT_TRUE(Exception, estimator_->isLandmarkAdded(lmIdB), "not added");
+      estimator_->addObservation<camera_geometry_t>(lmIdB, mfIdB_, camIdB_, indexB);
     }
 
   }
