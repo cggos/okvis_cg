@@ -35,7 +35,13 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
 MH_01_easy Dataset:
 
 ```bash
-./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy/mav0/
+./okvis_app_synchronous \
+    path/to/okvis/config/config_fpga_p2_euroc.yaml \
+    path/to/MH_01_easy/mav0/
+```
+or
+```bash
+cd okvis & bash run_with_mav0.sh
 ```
 
 * okvis_ros
@@ -43,12 +49,18 @@ MH_01_easy Dataset:
 MH_01_easy Dataset:
 
 ```bash
-rosrun okvis_ros okvis_node_synchronous path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy.bag
+rosrun okvis_ros okvis_node_synchronous \
+    path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml \
+    path/to/MH_01_easy.bag
 ```
 or  
 ```bash
 roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
 ```
+
+<div align=center>
+  <img src="./images/okvis_run_mav.jpg">
+</div>
 
 ## Supported Camera and Distortion models
 
