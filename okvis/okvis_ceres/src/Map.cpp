@@ -643,8 +643,7 @@ bool Map::setParameterization(
 std::shared_ptr<okvis::ceres::ParameterBlock> Map::parameterBlockPtr(
     uint64_t parameterBlockId) {
   // get a parameterBlock
-  OKVIS_ASSERT_TRUE(
-      Exception, parameterBlockExists(parameterBlockId),
+  OKVIS_ASSERT_TRUE(Exception, parameterBlockExists(parameterBlockId),
       "parameterBlock with id "<<parameterBlockId<<" does not exist");
   if (parameterBlockExists(parameterBlockId)) {
     return id2ParameterBlock_Map_.find(parameterBlockId)->second;

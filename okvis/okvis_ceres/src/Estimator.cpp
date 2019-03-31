@@ -127,25 +127,22 @@ bool Estimator::addStates(
   } else {
     // get the previous states
     uint64_t T_WS_id = statesMap_.rbegin()->second.id;
-    uint64_t speedAndBias_id = statesMap_.rbegin()->second.sensors.at(SensorStates::Imu)
-        .at(0).at(ImuSensorStates::SpeedAndBias).id;
+    uint64_t speedAndBias_id =
+            statesMap_.rbegin()->second.sensors.at(SensorStates::Imu).at(0).at(ImuSensorStates::SpeedAndBias).id;
     OKVIS_ASSERT_TRUE_DBG(Exception, mapPtr_->parameterBlockExists(T_WS_id),
                        "this is an okvis bug. previous pose does not exist.");
-    T_WS = std::static_pointer_cast<ceres::PoseParameterBlock>(
-        mapPtr_->parameterBlockPtr(T_WS_id))->estimate();
+    T_WS = std::static_pointer_cast<ceres::PoseParameterBlock>(mapPtr_->parameterBlockPtr(T_WS_id))->estimate();
     //OKVIS_ASSERT_TRUE_DBG(
     //    Exception, speedAndBias_id,
     //    "this is an okvis bug. previous speedAndBias does not exist.");
-    speedAndBias =
-        std::static_pointer_cast<ceres::SpeedAndBiasParameterBlock>(
+    speedAndBias = std::static_pointer_cast<ceres::SpeedAndBiasParameterBlock>(
             mapPtr_->parameterBlockPtr(speedAndBias_id))->estimate();
 
     // propagate pose and speedAndBias
     int numUsedImuMeasurements = ceres::ImuError::propagation(
         imuMeasurements, imuParametersVec_.at(0), T_WS, speedAndBias,
         statesMap_.rbegin()->second.timestamp, multiFrame->timestamp());
-    OKVIS_ASSERT_TRUE_DBG(Exception, numUsedImuMeasurements > 1,
-                       "propagation failed");
+    OKVIS_ASSERT_TRUE_DBG(Exception, numUsedImuMeasurements > 1, "propagation failed");
     if (numUsedImuMeasurements < 1){
       LOG(INFO) << "numUsedImuMeasurements=" << numUsedImuMeasurements;
       return false;

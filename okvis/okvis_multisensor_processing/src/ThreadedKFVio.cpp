@@ -110,7 +110,7 @@ void ThreadedKFVio::init() {
           std::shared_ptr<threadsafe::ThreadSafeQueue<std::shared_ptr<okvis::CameraMeasurement> > >
           (new threadsafe::ThreadSafeQueue<std::shared_ptr<okvis::CameraMeasurement> >()));
   }
-  
+
   // set up windows so things don't crash on Mac OS
   if(parameters_.visualization.displayImages){
     for (size_t im = 0; im < parameters_.nCameraSystem.numCameras(); im++) {
@@ -119,7 +119,7 @@ void ThreadedKFVio::init() {
   	  cv::namedWindow(windowname.str());
     }
   }
-  
+
   startThreads();
 }
 
@@ -127,21 +127,31 @@ void ThreadedKFVio::init() {
 void ThreadedKFVio::startThreads() {
 
   // consumer threads
+
+  // frameConsumerLoop 负责特征提取，每个 camera 开一个线程
   for (size_t i = 0; i < numCameras_; ++i) {
     frameConsumerThreads_.emplace_back(&ThreadedKFVio::frameConsumerLoop, this, i);
   }
+  // keypointConsumerThreads_ 负责特征匹配，这里只有两个相机，numCameraPairs_ == 1，所以开启一个线程用来特征匹配
   for (size_t i = 0; i < numCameraPairs_; ++i) {
     keypointConsumerThreads_.emplace_back(&ThreadedKFVio::matchingLoop, this);
   }
+  // imuConsumerThread_ 负责根据 imu 数据做系统状态估计
   imuConsumerThread_          = std::thread(&ThreadedKFVio::imuConsumerLoop, this);
   positionConsumerThread_     = std::thread(&ThreadedKFVio::positionConsumerLoop, this);
+
+  // 三个线程没用到
   gpsConsumerThread_          = std::thread(&ThreadedKFVio::gpsConsumerLoop, this);
   magnetometerConsumerThread_ = std::thread(&ThreadedKFVio::magnetometerConsumerLoop, this);
   differentialConsumerThread_ = std::thread(&ThreadedKFVio::differentialConsumerLoop, this);
 
   // algorithm threads
+
+  // visualizationThread_ 负责将当前帧，关键帧的图片，和匹配的特征显示出来
   visualizationThread_        = std::thread(&ThreadedKFVio::visualizationLoop, this);
+  // 优化和边缘化线程
   optimizationThread_         = std::thread(&ThreadedKFVio::optimizationLoop, this);
+  // 将优化的结果给 poseViewer，poseViewer 将当前系统的状态量显示出来，并且把相机的轨迹画出来
   publisherThread_            = std::thread(&ThreadedKFVio::publisherLoop, this);
 }
 
@@ -306,6 +316,7 @@ void ThreadedKFVio::setBlocking(bool blocking) {
 void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
   std::shared_ptr<okvis::CameraMeasurement> frame;
   std::shared_ptr<okvis::MultiFrame> multiFrame;
+
   TimerSwitchable beforeDetectTimer("1.1 frameLoopBeforeDetect"+std::to_string(cameraIndex),true);
   TimerSwitchable waitForFrameSynchronizerMutexTimer("1.1.1 waitForFrameSynchronizerMutex"+std::to_string(cameraIndex),true);
   TimerSwitchable addNewFrameToSynchronizerTimer("1.1.2 addNewFrameToSynchronizer"+std::to_string(cameraIndex),true);
@@ -315,7 +326,6 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
   TimerSwitchable afterDetectTimer("1.3 afterDetect"+std::to_string(cameraIndex),true);
   TimerSwitchable waitForFrameSynchronizerMutexTimer2("1.3.1 waitForFrameSynchronizerMutex2"+std::to_string(cameraIndex),true);
   TimerSwitchable waitForMatchingThreadTimer("1.4 waitForMatchingThread"+std::to_string(cameraIndex),true);
-
 
   for (;;) {
     // get data and check for termination request
@@ -358,8 +368,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     if (imuFrameSynchronizer_.waitForUpToDateImuData(okvis::Time(imuDataEndTime)) == false)  {
       return;
     }
-    OKVIS_ASSERT_TRUE_DBG(Exception,
-                          imuDataEndTime < imuMeasurements_.back().timeStamp,
+    OKVIS_ASSERT_TRUE_DBG(Exception, imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
 
     okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
@@ -396,6 +405,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     } else {
       // get old T_WS
       propagationTimer.start();
+      // 根据当前处理的 multiFrame 的时间戳和 multiFrame 附近的 IMU 测量值对 multiFrame 做位姿估计，估计的位姿用于特征的提取
       okvis::ceres::ImuError::propagation(imuData, parameters_.imu, T_WS, speedAndBiases, lastTimestamp, multiFrame->timestamp());
       propagationTimer.stop();
     }
@@ -466,8 +476,7 @@ void ThreadedKFVio::matchingLoop() {
     if (!imuFrameSynchronizer_.waitForUpToDateImuData(okvis::Time(imuDataEndTime)))
       return;
 
-    OKVIS_ASSERT_TRUE_DBG(Exception,
-                          imuDataEndTime < imuMeasurements_.back().timeStamp,
+    OKVIS_ASSERT_TRUE_DBG(Exception, imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
 
     okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
@@ -535,9 +544,7 @@ void ThreadedKFVio::imuConsumerLoop() {
     const okvis::Time* end;  // do not need to copy end timestamp
     {
       std::lock_guard<std::mutex> imuLock(imuMeasurements_mutex_);
-      OKVIS_ASSERT_TRUE(Exception,
-                        imuMeasurements_.empty()
-                        || imuMeasurements_.back().timeStamp < data.timeStamp,
+      OKVIS_ASSERT_TRUE(Exception, imuMeasurements_.empty() || imuMeasurements_.back().timeStamp < data.timeStamp,
                         "IMU measurement from the past received");
 
       if (parameters_.publishing.publishImuPropagatedState) {
@@ -564,18 +571,15 @@ void ThreadedKFVio::imuConsumerLoop() {
       Eigen::Matrix<double, 15, 15> jacobian;
 
       frontend_.propagation(imuMeasurements_, imu_params_, T_WS_propagated_,
-                            speedAndBiases_propagated_, start, *end, &covariance,
-                            &jacobian);
+                            speedAndBiases_propagated_, start, *end, &covariance, &jacobian);
+
       OptimizationResults result;
       result.stamp = *end;
       result.T_WS = T_WS_propagated_;
       result.speedAndBiases = speedAndBiases_propagated_;
-      result.omega_S = imuMeasurements_.back().measurement.gyroscopes
-          - speedAndBiases_propagated_.segment<3>(3);
+      result.omega_S = imuMeasurements_.back().measurement.gyroscopes - speedAndBiases_propagated_.segment<3>(3);
       for (size_t i = 0; i < parameters_.nCameraSystem.numCameras(); ++i) {
-        result.vector_of_T_SCi.push_back(
-            okvis::kinematics::Transformation(
-                *parameters_.nCameraSystem.T_SC(i)));
+        result.vector_of_T_SCi.push_back(okvis::kinematics::Transformation(*parameters_.nCameraSystem.T_SC(i)));
       }
       result.onlyPublishLandmarks = false;
       optimizationResults_.PushNonBlockingDroppingIfFull(result,1);
