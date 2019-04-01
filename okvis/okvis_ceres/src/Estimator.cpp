@@ -118,8 +118,7 @@ bool Estimator::addStates(
   if (statesMap_.empty()) {
     // in case this is the first frame ever, let's initialize the pose:
     bool success0 = initPoseFromImu(imuMeasurements, T_WS);
-    OKVIS_ASSERT_TRUE_DBG(Exception, success0,
-        "pose could not be initialized from imu measurements.");
+    OKVIS_ASSERT_TRUE_DBG(Exception, success0, "pose could not be initialized from imu measurements.");
     if (!success0)
       return false;
     speedAndBias.setZero();
@@ -127,16 +126,14 @@ bool Estimator::addStates(
   } else {
     // get the previous states
     uint64_t T_WS_id = statesMap_.rbegin()->second.id;
-    uint64_t speedAndBias_id =
-            statesMap_.rbegin()->second.sensors.at(SensorStates::Imu).at(0).at(ImuSensorStates::SpeedAndBias).id;
-    OKVIS_ASSERT_TRUE_DBG(Exception, mapPtr_->parameterBlockExists(T_WS_id),
-                       "this is an okvis bug. previous pose does not exist.");
+    uint64_t speedAndBias_id = statesMap_.rbegin()->second.sensors.at(SensorStates::Imu).at(0).at(ImuSensorStates::SpeedAndBias).id;
+    OKVIS_ASSERT_TRUE_DBG(Exception, mapPtr_->parameterBlockExists(T_WS_id), "this is an okvis bug. previous pose does not exist.");
+
     T_WS = std::static_pointer_cast<ceres::PoseParameterBlock>(mapPtr_->parameterBlockPtr(T_WS_id))->estimate();
     //OKVIS_ASSERT_TRUE_DBG(
     //    Exception, speedAndBias_id,
     //    "this is an okvis bug. previous speedAndBias does not exist.");
-    speedAndBias = std::static_pointer_cast<ceres::SpeedAndBiasParameterBlock>(
-            mapPtr_->parameterBlockPtr(speedAndBias_id))->estimate();
+    speedAndBias = std::static_pointer_cast<ceres::SpeedAndBiasParameterBlock>(mapPtr_->parameterBlockPtr(speedAndBias_id))->estimate();
 
     // propagate pose and speedAndBias
     int numUsedImuMeasurements = ceres::ImuError::propagation(
@@ -149,19 +146,16 @@ bool Estimator::addStates(
     }
   }
 
-
   // create a states object:
   States states(asKeyframe, multiFrame->id(), multiFrame->timestamp());
 
   // check if id was used before
-  OKVIS_ASSERT_TRUE_DBG(Exception,
-      statesMap_.find(states.id)==statesMap_.end(),
-      "pose ID" <<states.id<<" was used before!");
+  OKVIS_ASSERT_TRUE_DBG(Exception, statesMap_.find(states.id)==statesMap_.end(), "pose ID" <<states.id<<" was used before!");
 
   // create global states
   std::shared_ptr<okvis::ceres::PoseParameterBlock> poseParameterBlock(
-      new okvis::ceres::PoseParameterBlock(T_WS, states.id,
-                                           multiFrame->timestamp()));
+      new okvis::ceres::PoseParameterBlock(T_WS, states.id, multiFrame->timestamp()));
+
   states.global.at(GlobalStates::T_WS).exists = true;
   states.global.at(GlobalStates::T_WS).id = states.id;
 
@@ -235,6 +229,7 @@ bool Estimator::addStates(
     // let's add a prior
     Eigen::Matrix<double,6,6> information = Eigen::Matrix<double,6,6>::Zero();
     information(5,5) = 1.0e8; information(0,0) = 1.0e8; information(1,1) = 1.0e8; information(2,2) = 1.0e8;
+
     std::shared_ptr<ceres::PoseError > poseError(new ceres::PoseError(T_WS, information));
     /*auto id2= */ mapPtr_->addResidualBlock(poseError,NULL,poseParameterBlock);
     //mapPtr_->isJacobianCorrect(id2,1.0e-6);
@@ -247,19 +242,14 @@ bool Estimator::addStates(
       double rotationVariance = rotationStdev*rotationStdev;
       if(translationVariance>1.0e-16 && rotationVariance>1.0e-16){
         const okvis::kinematics::Transformation T_SC = *multiFrame->T_SC(i);
-        std::shared_ptr<ceres::PoseError > cameraPoseError(
-              new ceres::PoseError(T_SC, translationVariance, rotationVariance));
+        std::shared_ptr<ceres::PoseError > cameraPoseError(new ceres::PoseError(T_SC, translationVariance, rotationVariance));
         // add to map
-        mapPtr_->addResidualBlock(
-            cameraPoseError,
-            NULL,
-            mapPtr_->parameterBlockPtr(
-                states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id));
+        mapPtr_->addResidualBlock(cameraPoseError, NULL,
+            mapPtr_->parameterBlockPtr(states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id));
         //mapPtr_->isJacobianCorrect(id,1.0e-6);
       }
       else {
-        mapPtr_->setParameterBlockConstant(
-            states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id);
+        mapPtr_->setParameterBlockConstant(states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id);
       }
     }
     for (size_t i = 0; i < imuParametersVec_.size(); ++i) {
@@ -268,14 +258,10 @@ bool Estimator::addStates(
       const double sigma_bg = imuParametersVec_.at(0).sigma_bg;
       const double sigma_ba = imuParametersVec_.at(0).sigma_ba;
       std::shared_ptr<ceres::SpeedAndBiasError > speedAndBiasError(
-            new ceres::SpeedAndBiasError(
-                speedAndBias, 1.0, sigma_bg*sigma_bg, sigma_ba*sigma_ba));
+            new ceres::SpeedAndBiasError(speedAndBias, 1.0, sigma_bg*sigma_bg, sigma_ba*sigma_ba));
       // add to map
-      mapPtr_->addResidualBlock(
-          speedAndBiasError,
-          NULL,
-          mapPtr_->parameterBlockPtr(
-              states.sensors.at(SensorStates::Imu).at(i).at(ImuSensorStates::SpeedAndBias).id));
+      mapPtr_->addResidualBlock(speedAndBiasError, NULL,
+          mapPtr_->parameterBlockPtr(states.sensors.at(SensorStates::Imu).at(i).at(ImuSensorStates::SpeedAndBias).id));
       //mapPtr_->isJacobianCorrect(id,1.0e-6);
     }
   }
@@ -283,20 +269,14 @@ bool Estimator::addStates(
     // add IMU error terms
     for (size_t i = 0; i < imuParametersVec_.size(); ++i) {
       std::shared_ptr<ceres::ImuError> imuError(
-          new ceres::ImuError(imuMeasurements, imuParametersVec_.at(i),
-                              lastElementIterator->second.timestamp,
-                              states.timestamp));
+          new ceres::ImuError(imuMeasurements, imuParametersVec_.at(i), lastElementIterator->second.timestamp, states.timestamp));
       /*::ceres::ResidualBlockId id = */mapPtr_->addResidualBlock(
           imuError,
           NULL,
           mapPtr_->parameterBlockPtr(lastElementIterator->second.id),
-          mapPtr_->parameterBlockPtr(
-              lastElementIterator->second.sensors.at(SensorStates::Imu).at(i).at(
-                  ImuSensorStates::SpeedAndBias).id),
+          mapPtr_->parameterBlockPtr(lastElementIterator->second.sensors.at(SensorStates::Imu).at(i).at(ImuSensorStates::SpeedAndBias).id),
           mapPtr_->parameterBlockPtr(states.id),
-          mapPtr_->parameterBlockPtr(
-              states.sensors.at(SensorStates::Imu).at(i).at(
-                  ImuSensorStates::SpeedAndBias).id));
+          mapPtr_->parameterBlockPtr(states.sensors.at(SensorStates::Imu).at(i).at(ImuSensorStates::SpeedAndBias).id));
       //imuError->setRecomputeInformation(false);
       //mapPtr_->isJacobianCorrect(id,1.0e-9);
       //imuError->setRecomputeInformation(true);
@@ -306,27 +286,20 @@ bool Estimator::addStates(
     for (size_t i = 0; i < extrinsicsEstimationParametersVec_.size(); ++i) {
       if(lastElementIterator->second.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id !=
           states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id){
+
         // i.e. they are different estimated variables, so link them with a temporal error term
-        double dt = (states.timestamp - lastElementIterator->second.timestamp)
-            .toSec();
-        double translationSigmaC = extrinsicsEstimationParametersVec_.at(i)
-            .sigma_c_relative_translation;
+        double dt = (states.timestamp - lastElementIterator->second.timestamp).toSec();
+        double translationSigmaC = extrinsicsEstimationParametersVec_.at(i).sigma_c_relative_translation;
         double translationVariance = translationSigmaC * translationSigmaC * dt;
-        double rotationSigmaC = extrinsicsEstimationParametersVec_.at(i)
-            .sigma_c_relative_orientation;
+        double rotationSigmaC = extrinsicsEstimationParametersVec_.at(i).sigma_c_relative_orientation;
         double rotationVariance = rotationSigmaC * rotationSigmaC * dt;
-        std::shared_ptr<ceres::RelativePoseError> relativeExtrinsicsError(
-            new ceres::RelativePoseError(translationVariance,
-                                         rotationVariance));
+
+        std::shared_ptr<ceres::RelativePoseError> relativeExtrinsicsError(new ceres::RelativePoseError(translationVariance, rotationVariance));
         mapPtr_->addResidualBlock(
             relativeExtrinsicsError,
             NULL,
-            mapPtr_->parameterBlockPtr(
-                lastElementIterator->second.sensors.at(SensorStates::Camera).at(
-                    i).at(CameraSensorStates::T_SCi).id),
-            mapPtr_->parameterBlockPtr(
-                states.sensors.at(SensorStates::Camera).at(i).at(
-                    CameraSensorStates::T_SCi).id));
+            mapPtr_->parameterBlockPtr(lastElementIterator->second.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id),
+            mapPtr_->parameterBlockPtr(states.sensors.at(SensorStates::Camera).at(i).at(CameraSensorStates::T_SCi).id));
         //mapPtr_->isJacobianCorrect(id,1.0e-6);
       }
     }
