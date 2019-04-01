@@ -137,6 +137,7 @@ int Frame::describe(const Eigen::Vector3d & extractionDirection)
   Eigen::Matrix<double, 2, 3> Jacobian;
   Eigen::Vector2d eg_projected;
 
+  // paper: Gravity-aware handheld augmented reality 4.1
   for (size_t k = 0; k < keypoints_.size(); ++k) {
     cv::KeyPoint& ckp = keypoints_[k];
     // project ray

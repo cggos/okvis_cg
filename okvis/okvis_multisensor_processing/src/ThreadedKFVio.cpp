@@ -329,6 +329,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
 
   for (;;) {
     // get data and check for termination request
+    // 从相机测量队列中取出观测frame，空则等待
     if (cameraMeasurementsReceived_[cameraIndex]->PopBlocking(&frame) == false) {
       return;
     }
@@ -341,10 +342,11 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
       waitForFrameSynchronizerMutexTimer.stop();
       // add new frame to frame synchronizer and get the MultiFrame containing it
       addNewFrameToSynchronizerTimer.start();
-      multiFrame = frameSynchronizer_.addNewFrame(frame);
+      multiFrame = frameSynchronizer_.addNewFrame(frame); // 将观测加入frameSynchronizer进行同步
       addNewFrameToSynchronizerTimer.stop();
     }  // unlock frameSynchronizer only now as we can be sure that not two states are added for the same timestamp
 
+    // 获取上次优化的时间戳、优化后的T、速度和偏置
     okvis::kinematics::Transformation T_WS;
     okvis::Time lastTimestamp;
     okvis::SpeedAndBias speedAndBiases;
@@ -353,9 +355,9 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
       waitForStateVariablesMutexTimer.start();
       std::lock_guard<std::mutex> lock(lastState_mutex_);
       waitForStateVariablesMutexTimer.stop();
-      T_WS = lastOptimized_T_WS_;
+      T_WS           = lastOptimized_T_WS_;
       speedAndBiases = lastOptimizedSpeedAndBiases_;
-      lastTimestamp = lastOptimizedStateTimestamp_;
+      lastTimestamp  = lastOptimizedStateTimestamp_;
     }
 
     // -- get relevant imu messages for new state
@@ -371,6 +373,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     OKVIS_ASSERT_TRUE_DBG(Exception, imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
 
+    // 取出两帧之间的imu测量，用来初始化位姿（第一帧）或propagation
     okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
 
     // if imu_data is empty, either end_time > begin_time or
@@ -414,7 +417,7 @@ void ThreadedKFVio::frameConsumerLoop(size_t cameraIndex) {
     beforeDetectTimer.stop();
 
     detectTimer.start();
-    frontend_.detectAndDescribe(frame->sensorId, multiFrame, T_WC, nullptr);
+    frontend_.detectAndDescribe(frame->sensorId, multiFrame, T_WC, nullptr); // 特征检测与描述
     detectTimer.stop();
 
     afterDetectTimer.start();
@@ -479,6 +482,7 @@ void ThreadedKFVio::matchingLoop() {
     OKVIS_ASSERT_TRUE_DBG(Exception, imuDataEndTime < imuMeasurements_.back().timeStamp,
                           "Waiting for up to date imu data seems to have failed!");
 
+    // 取出两帧之间的imu测量
     okvis::ImuMeasurementDeque imuData = getImuMeasurments(imuDataBeginTime, imuDataEndTime);
 
     prepareToAddStateTimer.stop();

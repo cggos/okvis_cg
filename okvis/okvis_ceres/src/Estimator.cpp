@@ -821,17 +821,16 @@ bool Estimator::initPoseFromImu(
   }
   acc_B /= double(imuMeasurements.size());
 
-  Eigen::Vector3d e_acc = acc_B.normalized();
+  Eigen::Vector3d e_acc = acc_B.normalized(); // e_acc应该是g_s，即重力在s下的表示
 
   // align with ez_W:
   Eigen::Vector3d ez_W(0.0, 0.0, 1.0);
 
   Eigen::Matrix<double, 6, 1> poseIncrement;
 
-  poseIncrement.head<3>() = Eigen::Vector3d::Zero();
-  poseIncrement.tail<3>() = ez_W.cross(e_acc).normalized();
-
-  double angle = std::acos(ez_W.transpose() * e_acc);
+  poseIncrement.head<3>() = Eigen::Vector3d::Zero();        // 增量位移为0
+  poseIncrement.tail<3>() = ez_W.cross(e_acc).normalized(); // 增量旋转的轴，具有方向
+  double angle = std::acos(ez_W.transpose() * e_acc);       // 增量旋转的角度
   poseIncrement.tail<3>() *= angle;
 
   T_WS.oplus(-poseIncrement);
