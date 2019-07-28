@@ -25,38 +25,40 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
   ```
 * okvis_ros
   ```bash
-  catkin_make
+  mkdir -p ws_okvis/src
+  cd ws_okvis/src
+  git clone xxx
+  cd ..
+  catkin_make -j3
   ```
 
 ## Run
 
-* okvis
+### without ROS
 
-MH_01_easy Dataset:
+* MH_01_easy Dataset  
+  ```bash
+  ./okvis_app_synchronous \
+      path/to/okvis/config/config_fpga_p2_euroc.yaml \
+      path/to/MH_01_easy/mav0/
+  ```
+  or
+  ```bash
+  cd okvis & bash run_with_mav0.sh
+  ```
 
-```bash
-./okvis_app_synchronous \
-    path/to/okvis/config/config_fpga_p2_euroc.yaml \
-    path/to/MH_01_easy/mav0/
-```
-or
-```bash
-cd okvis & bash run_with_mav0.sh
-```
+### with ROS
 
-* okvis_ros
-
-MH_01_easy Dataset:
-
-```bash
-rosrun okvis_ros okvis_node_synchronous \
-    path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml \
-    path/to/MH_01_easy.bag
-```
-or  
-```bash
-roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
-```
+* MH_01_easy Dataset:
+  ```bash
+  rosrun okvis_ros okvis_node_synchronous \
+      path/to/okvis_ros/okvis/config/config_fpga_p2_euroc.yaml \
+      path/to/MH_01_easy.bag
+  ```
+  or  
+  ```bash
+  roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
+  ```
 
 <div align=center>
   <img src="./images/okvis_run_mav.jpg">
