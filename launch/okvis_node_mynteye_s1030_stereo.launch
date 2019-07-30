@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="rviz" default="false"/>
+
+    <group if="$(arg rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(find okvis_ros)/launch/okvis.rviz"/>
+    </group>
+
+    <node name="okvis_node" pkg="okvis_ros" type="okvis_node" output="screen">
+        <param name="config_filename" value="$(find okvis_ros)/okvis/config/config_mynteye_s1030_stereo.yaml" />
+        <param name="mesh_file"       value="firefly.dae" />
+        
+        <remap from="/camera0"      to="/mynteye/left/image_raw" />
+        <remap from="/camera1"      to="/mynteye/right/image_raw" />
+        <remap from="/imu"          to="/mynteye/imu/data_raw" />
+    </node>
+</launch>
