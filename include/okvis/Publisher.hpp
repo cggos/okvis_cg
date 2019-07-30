@@ -160,6 +160,8 @@ class Publisher
   ///        \e pathLength_ (change with setPathLength)poses that are published. Once the
   ///        maximum is reached, the last pose is copied in a new path message. The rest are deleted.
   void setPath(const okvis::kinematics::Transformation& T_WS);
+  
+  void setPathAll(const okvis::kinematics::Transformation& T_WS);
 
   /// \}
   /// \name Publish
@@ -272,6 +274,7 @@ class Publisher
   ros::Publisher pubPointsTransferred_; ///< The publisher for transferred/marginalised points.
   ros::Publisher pubObometry_;  ///< The publisher for the odometry.
   ros::Publisher pubPath_;  ///< The publisher for the path.
+  ros::Publisher pubPathAll_;
   ros::Publisher pubTransform_; ///< The publisher for the transform.
   ros::Publisher pubMesh_; ///< The publisher for a robot / camera mesh.
   std::vector<image_transport::Publisher> pubImagesVector_; ///< The publisher for the images.
@@ -290,6 +293,7 @@ class Publisher
   pcl::PointCloud<pcl::PointXYZRGB> pointsTransferred_; ///< Point cloud for transferred/marginalised points.
   std::vector<cv::Mat> images_; ///< The images.
   nav_msgs::Path path_; ///< The path message.
+  nav_msgs::Path path_all_;
   visualization_msgs::Marker meshMsg_; ///< Mesh message.
 
   /// @}

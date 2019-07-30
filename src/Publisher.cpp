@@ -100,6 +100,7 @@ void Publisher::setNodeHandle(ros::NodeHandle& nh)
       "okvis_points_transferred", 1);
   pubObometry_ = nh_->advertise<nav_msgs::Odometry>("okvis_odometry", 1);
   pubPath_ = nh_->advertise<nav_msgs::Path>("okvis_path", 1);
+  pubPathAll_ = nh_->advertise<nav_msgs::Path>("okvis_path_all", 1);
   pubTransform_ = nh_->advertise<geometry_msgs::TransformStamped>(
       "okvis_transform", 1);
   pubMesh_ = nh_->advertise<visualization_msgs::Marker>( "okvis_mesh", 0 );
@@ -506,6 +507,7 @@ void Publisher::publishFullStateAsCallback(
   setTime(t);
   setOdometry(T_WS, speedAndBiases, omega_S);  // TODO: provide setters for this hack
   setPath(T_WS);
+  setPathAll(T_WS);
   publishOdometry();
   publishTransform();
   publishPath();
@@ -669,6 +671,39 @@ void Publisher::setPath(const okvis::kinematics::Transformation &T_WS)
   path_.poses.push_back(pose);
 }
 
+void Publisher::setPathAll(const okvis::kinematics::Transformation &T_WS)
+{
+  geometry_msgs::PoseStamped pose;
+  pose.header.stamp = _t;
+  pose.header.frame_id = "world";
+  okvis::kinematics::Transformation T = parameters_.publishing.T_Wc_W*T_WS;
+
+  // put the path into the origin of the selected tracked frame
+  if (parameters_.publishing.trackedBodyFrame == FrameName::S) {
+    // nothing
+  } else if (parameters_.publishing.trackedBodyFrame == FrameName::B) {
+    T = T * parameters_.imu.T_BS.inverse();
+  } else {
+    LOG(ERROR) <<
+        "Pose frame does not exist for publishing. Choose 'S' or 'B'.";
+    T = T * parameters_.imu.T_BS.inverse();
+  }
+  
+  const Eigen::Vector3d& r = T.r();
+  pose.pose.position.x = r[0];
+  pose.pose.position.y = r[1];
+  pose.pose.position.z = r[2];
+  const Eigen::Quaterniond& q = T.q();
+  pose.pose.orientation.x = q.x();
+  pose.pose.orientation.y = q.y();
+  pose.pose.orientation.z = q.z();
+  pose.pose.orientation.w = q.w();
+
+  path_all_.header.stamp = _t;
+  path_all_.header.frame_id = "world";
+  path_all_.poses.push_back(pose);
+}
+
 // Publish the last set images.
 void Publisher::publishImages()
 {
@@ -702,6 +737,7 @@ void Publisher::publishImages()
 void Publisher::publishPath()
 {
   pubPath_.publish(path_);
+  pubPathAll_.publish(path_all_);
 }
 
 }  // namespace okvis
