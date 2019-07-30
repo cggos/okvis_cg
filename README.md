@@ -57,11 +57,33 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
   ```
   or  
   ```bash
-  roslaunch okvis_ros okvis_node_synchronous.launch [mono:=true]
+  roslaunch okvis_ros okvis_node_synchronous.launch rviz:=true [mono:=true]
   ```
+
+* MYNTEYE-S1030 (Stereo + IMU)
+  
+  ```sh
+  roslaunch okvis_ros okvis_node_mynteye_s1030_stereo.launch rviz:=true
+  ```
+
+### results
+
+* run with MH_01_easy dataset (without ROS)
 
 <div align=center>
   <img src="./images/okvis_run_mav.jpg">
+</div>
+
+* run with MH_01_easy dataset (with ROS)
+
+<div align=center>
+  <img src="./images/okvis_rviz_mh01.png">
+</div>
+
+* run with MYNTEYE-S1030 (Stereo+IMU, with ROS)
+
+<div align=center>
+  <img src="./images/okvis_rviz_mynteye_s1030.png">
 </div>
 
 ## Supported Camera and Distortion models
