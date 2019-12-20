@@ -63,7 +63,7 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
 * MYNTEYE-S1030 (Stereo + IMU)
   
   ```sh
-  roslaunch okvis_ros okvis_node_mynteye_s1030_stereo.launch rviz:=true
+  roslaunch okvis_ros okvis_node_mynteye.launch rviz:=true
   ```
 
 ### results
