@@ -77,8 +77,8 @@ using std::string;
 using std::map;
 using std::cout;
 using std::endl;
-using std::ofstream;
-using std::shared_ptr;
+// using std::ofstream;
+// using std::shared_ptr;
 
 const string RESET = "\033[0m";
 const string BLACK = "0m";
@@ -153,25 +153,25 @@ bool createDirs(string folderPath, map<string, map<string, string>> sensor_info)
   return res;
 }
 
-void writeCameraHeader(shared_ptr<ofstream> file)
+void writeCameraHeader(std::shared_ptr<std::ofstream> file)
 {
   *file << "#timestamp [ns]," << "filename" << endl;
 }
 
-void writeImuHeader(shared_ptr<ofstream> file)
+void writeImuHeader(std::shared_ptr<std::ofstream> file)
 {
   *file << "#timestamp [ns]," << "w_S_x [rad s^-1]," << "w_S_y [rad s^-1],"
       << "w_S_z [rad s^-1]," << "a_S_x [m s^-2]," << "a_S_y [m s^-2],"
       << "a_S_z [m s^-2]" << endl;
 }
 
-void writeViconHeader(shared_ptr<ofstream> file)
+void writeViconHeader(std::shared_ptr<std::ofstream> file)
 {
   *file << "#timestamp [ns]," << "p_S_x [m]," << "p_S_y [m]," << "p_S_z [m],"
       << "R_S_w []" << "R_S_x []," << "R_S_y []," << "R_S_z []" << endl;
 }
 
-void writeCSVHeaders(map<string, shared_ptr<ofstream>> &files,
+void writeCSVHeaders(map<string, std::shared_ptr<std::ofstream>> &files,
                      const map<string, map<string, string>> &sensor_info)
 {
   for (auto iterator : sensor_info) {
@@ -184,17 +184,17 @@ void writeCSVHeaders(map<string, shared_ptr<ofstream>> &files,
   }
 }
 
-map<string, shared_ptr<ofstream> > openFileStreams(
+map<string, std::shared_ptr<std::ofstream> > openFileStreams(
     const string folder_path, map<string, map<string, string>> &sensor_info)
 {
-  map<string, shared_ptr<ofstream>> topic2file_map;
+  map<string, std::shared_ptr<std::ofstream>> topic2file_map;
   for (auto &iterator : sensor_info) {
     string topic = iterator.first;
     string csv_file_path = folder_path + string("/") + iterator.second[CSVFILE];
-    ofstream *file = new ofstream(csv_file_path.c_str());
-    shared_ptr < ofstream > file_ptr(file);
+    std::ofstream *file = new std::ofstream(csv_file_path.c_str());
+    std::shared_ptr < std::ofstream > file_ptr(file);
     topic2file_map.insert(
-        std::pair<string, shared_ptr<ofstream>>(topic, file_ptr));
+        std::pair<string, std::shared_ptr<std::ofstream>>(topic, file_ptr));
   }
   writeCSVHeaders(topic2file_map, sensor_info);
   return topic2file_map;
@@ -274,7 +274,7 @@ map<string, map<string, string> > sensorInfo(const ros::NodeHandle &nh)
 
 }
 
-void writeCSVCamera(shared_ptr<ofstream> file, ros::Time stamp)
+void writeCSVCamera(std::shared_ptr<std::ofstream> file, ros::Time stamp)
 {
   std::stringstream ss;
   ss << stamp.toNSec() << "," << stamp.toNSec() << ".png";
@@ -282,7 +282,7 @@ void writeCSVCamera(shared_ptr<ofstream> file, ros::Time stamp)
   *file << ss.str() << endl;
 }
 
-void writeCSVImu(shared_ptr<ofstream> file, sensor_msgs::Imu::ConstPtr imu)
+void writeCSVImu(std::shared_ptr<std::ofstream> file, sensor_msgs::Imu::ConstPtr imu)
 {
   std::ostringstream ss;
   ss << std::setprecision(DOUBLE_PRECISION) << imu->header.stamp.toNSec() << ","
@@ -292,7 +292,7 @@ void writeCSVImu(shared_ptr<ofstream> file, sensor_msgs::Imu::ConstPtr imu)
   *file << ss.str() << endl;
 }
 
-void writeCSVVicon(shared_ptr<ofstream> file,
+void writeCSVVicon(std::shared_ptr<std::ofstream> file,
                    geometry_msgs::TransformStamped::ConstPtr vicon)
 {
   std::ostringstream ss;
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 
   cout << colouredString("\tOpening file streams...", RED, REGULAR);
 
-  map<string, shared_ptr<ofstream>> topic2file = openFileStreams(
+  map<string, std::shared_ptr<std::ofstream>> topic2file = openFileStreams(
       bagpath + bagname, topic2info_map);
   cout << colouredString("\t[DONE!]", GREEN, REGULAR) << endl;
 

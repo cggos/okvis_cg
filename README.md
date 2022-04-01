@@ -57,7 +57,7 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
   ```
   or  
   ```bash
-  roslaunch okvis_ros okvis_node_synchronous.launch rviz:=true [mono:=true]
+  roslaunch okvis_ros okvis_node_synchronous.launch rviz:=true [mono:=true] bag:=<bag-file-path>
   ```
 
 * MYNTEYE-S1030 (Stereo + IMU)
