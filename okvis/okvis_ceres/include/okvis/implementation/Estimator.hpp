@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -40,7 +40,7 @@
 namespace okvis {
 
 // Add an observation to a landmark.
-template<class GEOMETRY_TYPE>
+template <class GEOMETRY_TYPE>
 ::ceres::ResidualBlockId Estimator::addObservation(uint64_t landmarkId,
                                                    uint64_t poseId,
                                                    size_t camIdx,
@@ -63,10 +63,9 @@ template<class GEOMETRY_TYPE>
   information *= 64.0 / (size * size);
 
   // create error term
-  std::shared_ptr <ceres::ReprojectionError<GEOMETRY_TYPE>> reprojectionError(
-              new ceres::ReprojectionError<GEOMETRY_TYPE>(
-                  multiFramePtr->template geometryAs<GEOMETRY_TYPE>(camIdx),
-                  camIdx, measurement, information));
+  std::shared_ptr<ceres::ReprojectionError<GEOMETRY_TYPE>> reprojectionError(
+      new ceres::ReprojectionError<GEOMETRY_TYPE>(
+          multiFramePtr->template geometryAs<GEOMETRY_TYPE>(camIdx), camIdx, measurement, information));
 
   ::ceres::ResidualBlockId retVal = mapPtr_->addResidualBlock(
       reprojectionError,
@@ -77,8 +76,8 @@ template<class GEOMETRY_TYPE>
           statesMap_.at(poseId).sensors.at(SensorStates::Camera).at(camIdx).at(CameraSensorStates::T_SCi).id));
 
   // remember
-  landmarksMap_.at(landmarkId).observations.insert(
-      std::pair<okvis::KeypointIdentifier, uint64_t>(kid, reinterpret_cast<uint64_t>(retVal)));
+  landmarksMap_.at(landmarkId)
+      .observations.insert(std::pair<okvis::KeypointIdentifier, uint64_t>(kid, reinterpret_cast<uint64_t>(retVal)));
 
   return retVal;
 }

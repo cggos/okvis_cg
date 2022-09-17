@@ -40,7 +40,6 @@ add_subdirectory(okvis)
 # libvisensor
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/okvis/cmake")
 find_package(VISensor)
-
 if(VISENSORDRIVER_FOUND)
   add_definitions(-DHAVE_LIBVISENSOR)
   message(STATUS "Found libvisensor in ROS interface.")
@@ -105,8 +104,9 @@ include_directories(
 # now the actual applications
 add_executable(okvis_node src/okvis_node.cpp )
 target_link_libraries(okvis_node ${PROJECT_NAME} )
+
 add_executable(okvis_node_synchronous src/okvis_node_synchronous.cpp)
 target_link_libraries(okvis_node_synchronous ${PROJECT_NAME} )
+
 add_executable(dataset_convertor src/dataset_convertor.cpp)
 target_link_libraries(dataset_convertor ${PROJECT_NAME} )
-

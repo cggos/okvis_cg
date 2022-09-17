@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -43,22 +43,23 @@
 
 #include <memory>
 
+#include <brisk/internal/hamming.h>
 #include <okvis/DenseMatcher.hpp>
-#include <okvis/MatchingAlgorithm.hpp>
 #include <okvis/Estimator.hpp>
 #include <okvis/FrameTypedefs.hpp>
-#include <okvis/triangulation/ProbabilisticStereoTriangulator.hpp>
+#include <okvis/MatchingAlgorithm.hpp>
 #include <okvis/MultiFrame.hpp>
-#include <brisk/internal/hamming.h>
+#include <okvis/triangulation/ProbabilisticStereoTriangulator.hpp>
 
 /// \brief okvis Main namespace of this package.
 namespace okvis {
 
 /**
  * \brief A MatchingAlgorithm implementation
- * \tparam CAMERA_GEOMETRY_T Camera geometry model. See also okvis::cameras::CameraBase.
+ * \tparam CAMERA_GEOMETRY_T Camera geometry model. See also
+ * okvis::cameras::CameraBase.
  */
-template<class CAMERA_GEOMETRY_T>
+template <class CAMERA_GEOMETRY_T>
 class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -67,8 +68,10 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
   typedef CAMERA_GEOMETRY_T camera_geometry_t;
 
   enum MatchingTypes {
-    Match3D2D = 1,  ///< Match 3D position of established landmarks to 2D keypoint position
-    Match2D2D = 2   ///< Match 2D position of established landmarks to 2D keypoint position
+    Match3D2D = 1,  ///< Match 3D position of established landmarks to 2D
+                    ///< keypoint position
+    Match2D2D = 2   ///< Match 2D position of established landmarks to 2D
+                    ///< keypoint position
   };
 
   /**
@@ -79,7 +82,8 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
    * @param usePoseUncertainty  Use the pose uncertainty for matching.
    */
   VioKeyframeWindowMatchingAlgorithm(okvis::Estimator& estimator,
-                                     int matchingType, float distanceThreshold,
+                                     int matchingType,
+                                     float distanceThreshold,
                                      bool usePoseUncertainty = true);
 
   virtual ~VioKeyframeWindowMatchingAlgorithm();
@@ -99,7 +103,8 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
    */
   void setMatchingType(int matchingType);
 
-  /// \brief This will be called exactly once for each call to DenseMatcher::match().
+  /// \brief This will be called exactly once for each call to
+  /// DenseMatcher::match().
   virtual void doSetup();
 
   /// \brief What is the size of list A?
@@ -107,20 +112,19 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
   /// \brief What is the size of list B?
   virtual size_t sizeB() const;
 
-  /// \brief Get the distance threshold for which matches exceeding it will not be returned as matches.
+  /// \brief Get the distance threshold for which matches exceeding it will not
+  /// be returned as matches.
   virtual float distanceThreshold() const;
-  /// \brief Set the distance threshold for which matches exceeding it will not be returned as matches.
+  /// \brief Set the distance threshold for which matches exceeding it will not
+  /// be returned as matches.
   void setDistanceThreshold(float distanceThreshold);
 
-  /// \brief Should we skip the item in list A? This will be called once for each item in the list
-  virtual bool skipA(size_t indexA) const {
-    return skipA_[indexA];
-  }
+  /// \brief Should we skip the item in list A? This will be called once for
+  /// each item in the list
+  virtual bool skipA(size_t indexA) const { return skipA_[indexA]; }
 
   /// \brief Should we skip the item in list B? This will be called many times.
-  virtual bool skipB(size_t indexB) const {
-    return skipB_[indexB];
-  }
+  virtual bool skipB(size_t indexB) const { return skipB_[indexB]; }
 
   /**
    * @brief Calculate the distance between two keypoints.
@@ -132,13 +136,11 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
   virtual float distance(size_t indexA, size_t indexB) const {
     OKVIS_ASSERT_LT_DBG(MatchingAlgorithm::Exception, indexA, sizeA(), "index A out of bounds");
     OKVIS_ASSERT_LT_DBG(MatchingAlgorithm::Exception, indexB, sizeB(), "index B out of bounds");
-    const float dist = static_cast<float>(specificDescriptorDistance(
-        frameA_->keypointDescriptor(camIdA_, indexA),
-        frameB_->keypointDescriptor(camIdB_, indexB)));
+    const float dist = static_cast<float>(specificDescriptorDistance(frameA_->keypointDescriptor(camIdA_, indexA),
+                                                                     frameB_->keypointDescriptor(camIdB_, indexB)));
 
     if (dist < distanceThreshold_) {
-      if (verifyMatch(indexA, indexB))
-        return dist;
+      if (verifyMatch(indexA, indexB)) return dist;
     }
     return std::numeric_limits<float>::max();
   }
@@ -146,8 +148,8 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
   /// \brief Geometric verification of a match.
   bool verifyMatch(size_t indexA, size_t indexB) const;
 
-  /// \brief A function that tells you how many times setMatching() will be called.
-  /// \warning Currently not implemented to do anything.
+  /// \brief A function that tells you how many times setMatching() will be
+  /// called. \warning Currently not implemented to do anything.
   virtual void reserveMatches(size_t numMatches);
 
   /// \brief At the end of the matching step, this function is called once
@@ -160,12 +162,10 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
   size_t numUncertainMatches();
 
   /// \brief access the matching result.
-  const okvis::Matches & getMatches() const;
+  const okvis::Matches& getMatches() const;
 
   /// \brief assess the validity of the relative uncertainty computation.
-  bool isRelativeUncertaintyValid() {
-    return validRelativeUncertainty_;
-  }
+  bool isRelativeUncertaintyValid() { return validRelativeUncertainty_; }
 
  private:
   /// \brief This is essentially the map.
@@ -243,17 +243,15 @@ class VioKeyframeWindowMatchingAlgorithm : public okvis::MatchingAlgorithm {
 
   /// \brief Calculates the distance between two descriptors.
   // copy from BriskDescriptor.hpp
-  uint32_t specificDescriptorDistance(
-      const unsigned char * descriptorA,
-      const unsigned char * descriptorB) const {
-    OKVIS_ASSERT_TRUE_DBG(
-        Exception, descriptorA != NULL && descriptorB != NULL,
-        "Trying to compare a descriptor with a null description vector");
+  uint32_t specificDescriptorDistance(const unsigned char* descriptorA, const unsigned char* descriptorB) const {
+    OKVIS_ASSERT_TRUE_DBG(Exception,
+                          descriptorA != NULL && descriptorB != NULL,
+                          "Trying to compare a descriptor with a null description vector");
 
-    return brisk::Hamming::PopcntofXORed(descriptorA, descriptorB, 3/*48 / 16*/);
+    return brisk::Hamming::PopcntofXORed(descriptorA, descriptorB, 3 /*48 / 16*/);
   }
 };
 
-}
+}  // namespace okvis
 
 #endif /* INCLUDE_OKVIS_VIOKEYFRAMEWINDOWMATCHINGALGORITHM_HPP_ */

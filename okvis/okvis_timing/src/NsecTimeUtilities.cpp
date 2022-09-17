@@ -19,16 +19,16 @@
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  *  DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
  *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************************/
 
 #include <okvis/timing/NsecTimeUtilities.hpp>
@@ -37,44 +37,32 @@ namespace okvis {
 namespace timing {
 
 /// \brief Convert nanoseconds since the epoch to std::chrono
-std::chrono::system_clock::time_point nsecToChrono( const NsecTime & time ) {
+std::chrono::system_clock::time_point nsecToChrono(const NsecTime& time) {
   std::chrono::nanoseconds tt(time);
   std::chrono::system_clock::time_point tp(std::chrono::duration_cast<std::chrono::system_clock::duration>(tt));
   return tp;
 }
 
-
 /// \brief Convert std::chrono to nanoseconds since the epoch.
-NsecTime chronoToNsec( const std::chrono::system_clock::time_point & time ) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>( time.time_since_epoch()).count();
+NsecTime chronoToNsec(const std::chrono::system_clock::time_point& time) {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(time.time_since_epoch()).count();
 }
-
 
 /// \brief Get the epoch time as nanoseconds since the epoch.
 NsecTime nsecNow() {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::system_clock::now().time_since_epoch() ).count();
-
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch())
+      .count();
 }
-
 
 /// \brief Convert the time (in integer nanoseconds) to decimal seconds.
-double nsecToSec( const NsecTime & time ) {
-  return (double) time * 1e-9;
-}
-
+double nsecToSec(const NsecTime& time) { return (double)time * 1e-9; }
 
 /// \brief Convert the time (in seconds) to integer nanoseconds
-NsecTime secToNsec( const double & time ) {
-  return boost::int64_t( time * 1e9 );
-}
+NsecTime secToNsec(const double& time) { return boost::int64_t(time * 1e9); }
 
-constexpr NsecTime getInvalidTime() {
-  return std::numeric_limits<NsecTime>::min();
-}
+constexpr NsecTime getInvalidTime() { return std::numeric_limits<NsecTime>::min(); }
 
-bool isValid(const NsecTime& time) {
-   return getInvalidTime() == time;
-}
+bool isValid(const NsecTime& time) { return getInvalidTime() == time; }
 
-} // namespace timing
-} // namespace okvis
+}  // namespace timing
+}  // namespace okvis

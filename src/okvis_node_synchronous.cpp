@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -34,45 +34,44 @@
 /**
  * @file okvis_node_synchronous.cpp
  * @brief This file includes the synchronous ROS node implementation.
- 
-          This node goes through a rosbag in order and waits until all processing is done
-          before adding a new message to algorithm
+
+          This node goes through a rosbag in order and waits until all
+ processing is done before adding a new message to algorithm
 
  * @author Stefan Leutenegger
  * @author Andreas Forster
  */
 
-#include <iostream>
-#include <fstream>
 #include <stdlib.h>
-#include <memory>
+#include <fstream>
 #include <functional>
+#include <iostream>
+#include <memory>
 
 #include "sensor_msgs/Imu.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
-#include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <ros/ros.h>
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <opencv2/opencv.hpp>
 #pragma GCC diagnostic pop
-#include <okvis/Subscriber.hpp>
 #include <okvis/Publisher.hpp>
 #include <okvis/RosParametersReader.hpp>
+#include <okvis/Subscriber.hpp>
 #include <okvis/ThreadedKFVio.hpp>
 
 #include "rosbag/bag.h"
 #include "rosbag/chunked_file.h"
 #include "rosbag/view.h"
 
-
-// this is just a workbench. most of the stuff here will go into the Frontend class.
+// this is just a workbench. most of the stuff here will go into the Frontend
+// class.
 int main(int argc, char **argv) {
-
   ros::init(argc, argv, "okvis_node_synchronous");
 
   google::InitGoogleLogging(argv[0]);
-  FLAGS_stderrthreshold = 0; // INFO: 0, WARNING: 1, ERROR: 2, FATAL: 3
+  FLAGS_stderrthreshold = 0;  // INFO: 0, WARNING: 1, ERROR: 2, FATAL: 3
   FLAGS_colorlogtostderr = 1;
 
   if (argc != 3 && argc != 4) {
@@ -100,11 +99,21 @@ int main(int argc, char **argv) {
 
   okvis::ThreadedKFVio okvis_estimator(parameters);
 
-  okvis_estimator.setFullStateCallback(std::bind(&okvis::Publisher::publishFullStateAsCallback,&publisher,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3,std::placeholders::_4));
-  okvis_estimator.setLandmarksCallback(std::bind(&okvis::Publisher::publishLandmarksAsCallback,&publisher,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
-  okvis_estimator.setStateCallback(std::bind(&okvis::Publisher::publishStateAsCallback,&publisher,std::placeholders::_1,std::placeholders::_2));
+  okvis_estimator.setFullStateCallback(std::bind(&okvis::Publisher::publishFullStateAsCallback,
+                                                 &publisher,
+                                                 std::placeholders::_1,
+                                                 std::placeholders::_2,
+                                                 std::placeholders::_3,
+                                                 std::placeholders::_4));
+  okvis_estimator.setLandmarksCallback(std::bind(&okvis::Publisher::publishLandmarksAsCallback,
+                                                 &publisher,
+                                                 std::placeholders::_1,
+                                                 std::placeholders::_2,
+                                                 std::placeholders::_3));
+  okvis_estimator.setStateCallback(
+      std::bind(&okvis::Publisher::publishStateAsCallback, &publisher, std::placeholders::_1, std::placeholders::_2));
   okvis_estimator.setBlocking(true);
-  publisher.setParameters(parameters); // pass the specified publishing stuff
+  publisher.setParameters(parameters);  // pass the specified publishing stuff
 
   // extract the folder path
   std::string bagname(argv[2]);
@@ -143,8 +152,8 @@ int main(int argc, char **argv) {
   std::vector<rosbag::View::iterator> view_cam_iterators;
   std::vector<okvis::Time> times;
   okvis::Time latest(0);
-  for(size_t i=0; i<numCameras;++i) {
-    std::string camera_topic("/cam"+std::to_string(i)+"/image_raw");
+  for (size_t i = 0; i < numCameras; ++i) {
+    std::string camera_topic("/cam" + std::to_string(i) + "/image_raw");
     std::shared_ptr<rosbag::View> view_ptr(new rosbag::View(bag, rosbag::TopicQuery(camera_topic)));
     if (view_ptr->size() == 0) {
       LOG(ERROR) << "no camera topic";
@@ -154,27 +163,25 @@ int main(int argc, char **argv) {
     view_cam_iterators.push_back(view_ptr->begin());
     sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]->instantiate<sensor_msgs::Image>();
     times.push_back(okvis::Time(msg1->header.stamp.sec, msg1->header.stamp.nsec));
-    if (times.back() > latest)
-      latest = times.back();
+    if (times.back() > latest) latest = times.back();
     LOG(INFO) << "No. cam " << i << " messages: " << view_cams_ptr.back()->size();
   }
 
-  for(size_t i=0; i<numCameras;++i) {
-    if ((latest - times[i]).toSec() > 0.01)
-      view_cam_iterators[i]++;
+  for (size_t i = 0; i < numCameras; ++i) {
+    if ((latest - times[i]).toSec() > 0.01) view_cam_iterators[i]++;
   }
 
   int counter = 0;
   okvis::Time start(0.0);
   while (ros::ok()) {
     ros::spinOnce();
-	okvis_estimator.display();
+    okvis_estimator.display();
 
     // check if at the end
-    if (view_imu_iterator == view_imu.end()){
+    if (view_imu_iterator == view_imu.end()) {
       std::cout << std::endl << "Finished. Press any key to exit." << std::endl << std::flush;
       char k = 0;
-      while(k==0 && ros::ok()){
+      while (k == 0 && ros::ok()) {
         k = cv::waitKey(1);
         ros::spinOnce();
       }
@@ -184,7 +191,7 @@ int main(int argc, char **argv) {
       if (view_cam_iterators[i] == view_cams_ptr[i]->end()) {
         std::cout << std::endl << "Finished. Press any key to exit." << std::endl << std::flush;
         char k = 0;
-        while(k==0 && ros::ok()){
+        while (k == 0 && ros::ok()) {
           k = cv::waitKey(1);
           ros::spinOnce();
         }
@@ -194,7 +201,7 @@ int main(int argc, char **argv) {
 
     // add images
     okvis::Time t;
-    for(size_t i=0; i<numCameras;++i) {
+    for (size_t i = 0; i < numCameras; ++i) {
       sensor_msgs::ImageConstPtr msg1 = view_cam_iterators[i]->instantiate<sensor_msgs::Image>();
       cv::Mat filtered(msg1->height, msg1->width, CV_8UC1);
       memcpy(filtered.data, &msg1->data[0], msg1->height * msg1->width);
@@ -204,7 +211,7 @@ int main(int argc, char **argv) {
       }
 
       // get all IMU measurements till then
-      okvis::Time t_imu=start;
+      okvis::Time t_imu = start;
       do {
         sensor_msgs::ImuConstPtr msg = view_imu_iterator->instantiate<sensor_msgs::Imu>();
         Eigen::Vector3d gyr(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
@@ -213,15 +220,13 @@ int main(int argc, char **argv) {
         t_imu = okvis::Time(msg->header.stamp.sec, msg->header.stamp.nsec);
 
         // add the IMU measurement for (blocking) processing
-        if (t_imu - start > deltaT)
-          okvis_estimator.addImuMeasurement(t_imu, acc, gyr);
+        if (t_imu - start > deltaT) okvis_estimator.addImuMeasurement(t_imu, acc, gyr);
 
         view_imu_iterator++;
       } while (view_imu_iterator != view_imu.end() && t_imu <= t);
 
       // add the image to the frontend for (blocking) processing
-      if (t - start > deltaT)
-        okvis_estimator.addImage(t, i, filtered);
+      if (t - start > deltaT) okvis_estimator.addImage(t, i, filtered);
 
       view_cam_iterators[i]++;
     }
@@ -229,9 +234,8 @@ int main(int argc, char **argv) {
 
     // display progress
     if (counter % 20 == 0) {
-      std::cout << "\rProgress: " << int(double(counter) / double(view_cams_ptr.back()->size()) * 100) << "%  " ;
+      std::cout << "\rProgress: " << int(double(counter) / double(view_cams_ptr.back()->size()) * 100) << "%  ";
     }
-
   }
 
   std::cout << std::endl;

@@ -4,7 +4,7 @@
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright notice,
@@ -41,8 +41,8 @@
 #ifndef INCLUDE_OKVIS_VIOFRONTENDINTERFACE_HPP_
 #define INCLUDE_OKVIS_VIOFRONTENDINTERFACE_HPP_
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include <Eigen/Core>
 
@@ -51,12 +51,12 @@
 
 #include <okvis/kinematics/Transformation.hpp>
 
+#include <okvis/FrameTypedefs.hpp>
 #include <okvis/Measurements.hpp>
+#include <okvis/MultiFrame.hpp>
 #include <okvis/Parameters.hpp>
 #include <okvis/Time.hpp>
-#include <okvis/FrameTypedefs.hpp>
 #include <okvis/VioBackendInterface.hpp>
-#include <okvis/MultiFrame.hpp>
 
 class Estimator;
 
@@ -68,27 +68,27 @@ namespace okvis {
  */
 class VioFrontendInterface {
  public:
-  VioFrontendInterface() {
-  }
-  virtual ~VioFrontendInterface() {
-  }
+  VioFrontendInterface() {}
+  virtual ~VioFrontendInterface() {}
   /// @name
-  /// In the derived class, the following methods (and nothing else) have to be implemented:
+  /// In the derived class, the following methods (and nothing else) have to be
+  /// implemented:
   ///@{
   /**
    * @brief Detection and descriptor extraction on a per image basis.
    * @param cameraIndex   Index of camera to do detection and description.
    * @param frameOut      Multiframe containing the frames.
    *                      Resulting keypoints and descriptors are saved in here.
-   * @param T_WC          Pose of camera with index cameraIndex at image capture time.
-   * @param[in] keypoints If the keypoints are already available from a different source, provide them here
-   *                      in order to skip detection.
+   * @param T_WC          Pose of camera with index cameraIndex at image capture
+   * time.
+   * @param[in] keypoints If the keypoints are already available from a
+   * different source, provide them here in order to skip detection.
    * @return True if successful.
    */
-  virtual bool detectAndDescribe(
-      size_t cameraIndex, std::shared_ptr<okvis::MultiFrame> frameOut,
-      const okvis::kinematics::Transformation& T_WC,
-      const std::vector<cv::KeyPoint> * keypoints) = 0;
+  virtual bool detectAndDescribe(size_t cameraIndex,
+                                 std::shared_ptr<okvis::MultiFrame> frameOut,
+                                 const okvis::kinematics::Transformation& T_WC,
+                                 const std::vector<cv::KeyPoint>* keypoints) = 0;
 
   /**
    * @brief Matching as well as initialization of landmarks and state.
@@ -96,16 +96,17 @@ class VioFrontendInterface {
    * @param T_WS_propagated Pose of sensor at image capture time.
    * @param params          Configuration parameters.
    * @param map             Current map.
-   * @param framesInOut     Multiframe including the descriptors of all the keypoints.
+   * @param framesInOut     Multiframe including the descriptors of all the
+   * keypoints.
    * @param[out] asKeyframe Should the frame be a keyframe?
    * @return True if successful.
    */
-  virtual bool dataAssociationAndInitialization(
-      okvis::Estimator& estimator,
-      okvis::kinematics::Transformation& T_WS_propagated,
-      const okvis::VioParameters & params,
-      const std::shared_ptr<okvis::MapPointVector> map,
-      std::shared_ptr<okvis::MultiFrame> framesInOut, bool* asKeyframe) = 0;
+  virtual bool dataAssociationAndInitialization(okvis::Estimator& estimator,
+                                                okvis::kinematics::Transformation& T_WS_propagated,
+                                                const okvis::VioParameters& params,
+                                                const std::shared_ptr<okvis::MapPointVector> map,
+                                                std::shared_ptr<okvis::MultiFrame> framesInOut,
+                                                bool* asKeyframe) = 0;
 
   /**
    * @brief Propagates pose, speeds and biases with given IMU measurements.
@@ -120,17 +121,18 @@ class VioFrontendInterface {
    * @param[out] jacobian Jacobian w.r.t. start states.
    * @return True on success.
    */
-  virtual bool propagation(const okvis::ImuMeasurementDeque & imuMeasurements,
-                           const okvis::ImuParameters & imuParams,
+  virtual bool propagation(const okvis::ImuMeasurementDeque& imuMeasurements,
+                           const okvis::ImuParameters& imuParams,
                            okvis::kinematics::Transformation& T_WS_propagated,
-                           okvis::SpeedAndBias & speedAndBiases,
-                           const okvis::Time& t_start, const okvis::Time& t_end,
+                           okvis::SpeedAndBias& speedAndBiases,
+                           const okvis::Time& t_start,
+                           const okvis::Time& t_end,
                            Eigen::Matrix<double, 15, 15>* covariance,
                            Eigen::Matrix<double, 15, 15>* jacobian) const = 0;
 
   ///@}
 };
 
-}
+}  // namespace okvis
 
 #endif /* INCLUDE_OKVIS_VIOFRONTENDINTERFACE_HPP_ */

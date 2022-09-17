@@ -19,30 +19,30 @@
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  *  DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
  *  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************************/
 
 /**
  * @file   NsecTimeUtilities.hpp
  * @author Paul Furgale <paul.furgale@gmail.com>
  * @date   Sat Jul 20 12:39:54 2013
- * 
+ *
  * @brief  Functions to support the use of nanosecond epoch time.
- * 
+ *
  */
 #ifndef INCLUDE_OKVIS_TIMING_NSECTIMEUTILITIES_HPP_
 #define INCLUDE_OKVIS_TIMING_NSECTIMEUTILITIES_HPP_
-#include <chrono>
 #include <boost/cstdint.hpp>
+#include <chrono>
 
 namespace okvis {
 namespace timing {
@@ -51,28 +51,28 @@ namespace timing {
 typedef boost::int64_t NsecTime;
 
 /// \brief Convert nanoseconds since the epoch to std::chrono
-std::chrono::system_clock::time_point nsecToChrono( const NsecTime & time );
+std::chrono::system_clock::time_point nsecToChrono(const NsecTime& time);
 
 /// \brief Convert std::chrono to nanoseconds since the epoch.
-NsecTime chronoToNsec( const std::chrono::system_clock::time_point & time );
+NsecTime chronoToNsec(const std::chrono::system_clock::time_point& time);
 
 /// \brief Get the epoch time as nanoseconds since the epoch.
 NsecTime nsecNow();
 
 /// \brief Convert the time (in integer nanoseconds) to decimal seconds.
-double nsecToSec( const NsecTime & time );
+double nsecToSec(const NsecTime& time);
 
 /// \brief Convert the time (in seconds) to integer nanoseconds
-NsecTime secToNsec( const double & time );
+NsecTime secToNsec(const double& time);
 
 /// \brief return a magic number representing an invalid timestamp
 constexpr NsecTime getInvalidTime();
 
 /// \brief Is the time valid? This uses a magic number
 ///        std::numeric_limits<NsecTime>::min() to represent an invalid time
-bool isValid(const NsecTime & time);
+bool isValid(const NsecTime& time);
 
-} // namespace timing
-} // namespace okvis
+}  // namespace timing
+}  // namespace okvis
 
 #endif /* INCLUDE_OKVIS_TIMING_NSECTIMEUTILITIES_HPP_ */
