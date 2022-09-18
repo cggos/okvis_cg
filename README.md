@@ -8,6 +8,9 @@ okvis ros wrapper and the core code is the modified version of **okvis-1.1.3**
 * [ethz-asl/okvis (Github)](https://github.com/ethz-asl/okvis)
 * [ethz-asl/okvis_ros (Github)](https://github.com/ethz-asl/okvis_ros)
 
+**Doc**
+* https://ethz-asl.github.io/okvis/
+
 **Papers**
 * [1] Stefan Leutenegger, Simon Lynen, Michael Bosse, Roland Siegwart and Paul Timothy Furgale. **Keyframe-based visual–inertial odometry using nonlinear optimization.** The International Journal of Robotics Research, 2015.
 * [2] Stefan Leutenegger. **Unmanned Solar Airplanes: Design and Algorithms for Efficient and Robust Autonomous Operation.** Doctoral dissertation, 2014.
